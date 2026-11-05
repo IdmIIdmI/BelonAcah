@@ -1,602 +1,335 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ms">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Anime Cyberpunk Scene</title>
+    <title>3D Galah Panjang - 10 Watak Anime</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Three.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 
     <style>
-        body { margin: 0; overflow: hidden; background-color: #050508; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
-        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body { overflow: hidden; background-color: #030308; font-family: sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; }
         
-        /* Glassmorphism Styling */
         .glass-panel {
-            background: rgba(15, 15, 25, 0.65);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            background: rgba(12, 12, 24, 0.75);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
         }
-
-        /* Scanline Overlay */
-        .scanlines {
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            background-size: 100% 3px, 6px 100%;
-            pointer-events: none;
+        
+        .dpad-btn {
+            background: rgba(236, 72, 153, 0.3);
+            border: 1px solid rgba(236, 72, 153, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
         }
+        .dpad-btn:active { background: rgba(236, 72, 153, 0.8); }
 
-        /* Custom Scrollbars */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-        ::-webkit-scrollbar-thumb { background: rgba(236, 72, 153, 0.5); border-radius: 2px; }
-
-        @keyframes pulse-glow {
-            0%, 100% { opacity: 0.8; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.05); }
-        }
-        .animate-pulse-glow { animation: pulse-glow 3s infinite ease-in-out; }
+        .roster-scroll::-webkit-scrollbar { width: 4px; }
+        .roster-scroll::-webkit-scrollbar-thumb { background: rgba(236, 72, 153, 0.6); border-radius: 4px; }
     </style>
 </head>
 <body class="relative min-h-screen text-white overflow-hidden">
 
-    <!-- 3D Render Canvas -->
     <div id="canvas-container"></div>
 
-    <!-- Vignette & Scanline Overlay -->
-    <div class="absolute inset-0 scanlines pointer-events-none z-10"></div>
-    <div class="absolute inset-0 pointer-events-none z-10" style="background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.8) 100%);"></div>
-
-    <!-- Top Navigation / Game HUD Header -->
-    <div class="absolute top-0 left-0 w-full p-4 md:p-6 z-20 flex justify-between items-start pointer-events-none">
-        <!-- Player Info & HP Bar -->
-        <div class="glass-panel p-4 rounded-xl flex items-center space-x-4 pointer-events-auto max-w-sm w-full border-l-4 border-pink-500">
-            <div class="relative w-12 h-12 rounded-lg bg-pink-500/20 border border-pink-400 flex items-center justify-center font-bold text-xl text-pink-300">
-                <i class="fa-solid fa-user-ninja"></i>
-                <span class="absolute -bottom-1 -right-1 text-[9px] bg-pink-600 text-white px-1 rounded">LV.99</span>
-            </div>
-            <div class="flex-1">
-                <div class="flex justify-between text-xs font-bold tracking-wider mb-1">
-                    <span class="text-pink-300">VALKYRIE_UNIT_01</span>
-                    <span class="text-gray-400">STATUS: READY</span>
-                </div>
-                <!-- Health Bar -->
-                <div class="w-full bg-gray-900/80 h-2.5 rounded-full overflow-hidden border border-gray-700/50 mb-1.5">
-                    <div id="hp-bar" class="bg-gradient-to-r from-pink-500 to-rose-400 h-full w-[85%] transition-all duration-300 shadow-[0_0_10px_#ec4899]"></div>
-                </div>
-                <!-- Mana Bar -->
-                <div class="w-full bg-gray-900/80 h-1.5 rounded-full overflow-hidden border border-gray-700/50">
-                    <div id="mana-bar" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full w-[60%] transition-all duration-300 shadow-[0_0_8px_#06b6d4]"></div>
-                </div>
-            </div>
+    <!-- TOP HUD -->
+    <div class="absolute top-4 left-4 z-20 glass-panel p-3 rounded-2xl flex items-center space-x-3 border-l-4 border-pink-500 max-w-xs w-full">
+        <div class="w-10 h-10 rounded-xl bg-pink-500/20 border border-pink-400 flex items-center justify-center font-bold text-pink-300">
+            <i class="fa-solid fa-trophy"></i>
         </div>
-
-        <!-- Controls & Audio Switch -->
-        <div class="flex space-x-3 pointer-events-auto">
-            <button id="audio-btn" class="glass-panel p-3 rounded-xl hover:bg-pink-500/20 transition border border-pink-500/30 text-pink-300 flex items-center space-x-2">
-                <i class="fa-solid fa-volume-xmark text-lg" id="audio-icon"></i>
-                <span class="text-xs font-bold tracking-wider hidden md:inline">SYNTH BGM</span>
-            </button>
-            <label class="glass-panel p-3 rounded-xl hover:bg-cyan-500/20 transition border border-cyan-500/30 text-cyan-300 flex items-center space-x-2 cursor-pointer">
-                <i class="fa-solid fa-file-arrow-up text-lg"></i>
-                <span class="text-xs font-bold tracking-wider hidden md:inline">LOAD .GLB</span>
-                <input type="file" id="glb-upload" accept=".glb,.gltf" class="hidden">
-            </label>
+        <div>
+            <div id="char-name-hud" class="text-xs font-bold text-pink-300 font-mono">GALAH PANJANG 3D</div>
+            <div class="text-[11px] text-emerald-400 mt-0.5">SKOR: <span id="score-text">0</span> | <span id="status-text">LEPASI GARISAN 1</span></div>
         </div>
     </div>
 
-    <!-- Bottom Actions & Controls HUD -->
-    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 pointer-events-auto flex flex-col items-center space-y-4">
-        
-        <!-- Theme Selector Pills -->
-        <div class="glass-panel px-3 py-1.5 rounded-full flex space-x-2 border border-white/10 text-xs">
-            <button onclick="setTheme('sakura')" class="px-3 py-1 rounded-full bg-pink-500/30 hover:bg-pink-500/50 text-pink-200 border border-pink-400/30 transition">Sakura</button>
-            <button onclick="setTheme('cyber')" class="px-3 py-1 rounded-full bg-cyan-500/30 hover:bg-cyan-500/50 text-cyan-200 border border-cyan-400/30 transition">Cyber</button>
-            <button onclick="setTheme('astral')" class="px-3 py-1 rounded-full bg-purple-500/30 hover:bg-purple-500/50 text-purple-200 border border-purple-400/30 transition">Astral</button>
-            <button onclick="setTheme('emperor')" class="px-3 py-1 rounded-full bg-amber-500/30 hover:bg-amber-500/50 text-amber-200 border border-amber-400/30 transition">Emperor</button>
+    <!-- RIGHT HUD: 10 Character Roster Selector -->
+    <div class="absolute top-20 right-4 z-20 glass-panel p-3 rounded-2xl border border-pink-500/30 max-h-[60vh] flex flex-col pointer-events-auto w-44">
+        <div class="text-xs font-bold text-pink-300 mb-2 border-b border-white/10 pb-1 flex justify-between">
+            <span>PILIH WATAK</span>
+            <span class="text-[9px] bg-pink-500/30 text-pink-200 px-1 rounded">10 ROSTER</span>
         </div>
-
-        <!-- Action Command Buttons -->
-        <div class="flex items-center space-x-4">
-            <button id="btn-pose" class="glass-panel px-5 py-2.5 rounded-xl border border-pink-500/40 text-pink-300 hover:bg-pink-500/30 font-bold text-xs tracking-wider transition active:scale-95 flex items-center space-x-2">
-                <i class="fa-solid fa-person-running"></i>
-                <span>POSE</span>
-            </button>
-            <button id="btn-burst" class="glass-panel px-7 py-3 rounded-2xl border-2 border-pink-400 bg-gradient-to-r from-pink-500/40 to-purple-600/40 text-white font-extrabold text-sm tracking-widest hover:brightness-125 transition shadow-[0_0_20px_rgba(236,72,153,0.5)] active:scale-95 flex items-center space-x-2">
-                <i class="fa-solid fa-bolt text-yellow-300 animate-bounce"></i>
-                <span>BURST MODE</span>
-            </button>
-            <button id="btn-charge" class="glass-panel px-5 py-2.5 rounded-xl border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 font-bold text-xs tracking-wider transition active:scale-95 flex items-center space-x-2">
-                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <span>CHARGE</span>
-            </button>
-        </div>
+        <div id="roster-container" class="roster-scroll space-y-1.5 overflow-y-auto pr-1"></div>
     </div>
 
-    <!-- JavaScript Logic -->
+    <!-- TOUCH CONTROLS (D-PAD) -->
+    <div class="absolute bottom-6 left-6 z-20 grid grid-cols-3 gap-2 w-36 h-36 md:hidden pointer-events-auto">
+        <div></div>
+        <button id="btn-up" class="dpad-btn"><i class="fa-solid fa-arrow-up"></i></button>
+        <div></div>
+        <button id="btn-left" class="dpad-btn"><i class="fa-solid fa-arrow-left"></i></button>
+        <div class="flex items-center justify-center text-[9px] font-bold text-pink-400">MOVE</div>
+        <button id="btn-right" class="dpad-btn"><i class="fa-solid fa-arrow-right"></i></button>
+        <div></div>
+        <button id="btn-down" class="dpad-btn"><i class="fa-solid fa-arrow-down"></i></button>
+        <div></div>
+    </div>
+
+    <!-- RESET BUTTON -->
+    <div class="absolute bottom-6 right-6 z-20 pointer-events-auto">
+        <button id="btn-reset" class="glass-panel px-5 py-3 rounded-xl border border-pink-500/40 text-pink-300 font-bold text-xs hover:bg-pink-500/30">MAIN SEMULA</button>
+    </div>
+
     <script>
-        // --- Global Variables & Three.js Setup ---
-        let scene, camera, renderer, controls;
-        let characterGroup, wingsGroup, magicCircle, particleSystem;
-        let clock = new THREE.Clock();
-        let currentTheme = 'sakura';
-        let isBurstMode = false;
-        let customModelLoaded = false;
+        // 10 Watak Anime 3D Instant
+        const characterList = [
+            { id: 0, name: "Valkyrie Mech", color: 0xec4899, type: "humanoid" },
+            { id: 1, name: "Kitsune Fox", color: 0xf97316, type: "beast" },
+            { id: 2, name: "Cyber Knight", color: 0x06b6d4, type: "humanoid" },
+            { id: 3, name: "Heavy Cyborg", color: 0x64748b, type: "mech" },
+            { id: 4, name: "Shadow Ninja", color: 0x10b981, type: "humanoid" },
+            { id: 5, name: "Celestial Mage", color: 0x8b5cf6, type: "humanoid" },
+            { id: 6, name: "Emperor Mech", color: 0xeab308, type: "mech" },
+            { id: 7, name: "Neko Mascot", color: 0xf43f5e, type: "chibi" },
+            { id: 8, name: "Plasma Android", color: 0x3b82f6, type: "humanoid" },
+            { id: 9, name: "Titan Sentinel", color: 0xef4444, type: "mech" }
+        ];
 
-        // Theme Palette Config
-        const themes = {
-            sakura: { primary: 0xec4899, secondary: 0xf43f5e, bg: 0x0c0510, fog: 0x180a20, grid: 0xff66cc },
-            cyber:  { primary: 0x06b6d4, secondary: 0x3b82f6, bg: 0x030d1a, fog: 0x051a2e, grid: 0x00f0ff },
-            astral: { primary: 0x8b5cf6, secondary: 0xa855f7, bg: 0x0a0518, fog: 0x12082b, grid: 0xb066ff },
-            emperor:{ primary: 0xf59e0b, secondary: 0xef4444, bg: 0x140d02, fog: 0x241703, grid: 0xffaa00 }
-        };
+        let scene, camera, renderer, controls;
+        let playerGroup, defenders = [];
+        let clock = new THREE.Clock();
+        let moveState = { up: false, down: false, left: false, right: false };
+        let currentSelection = 0;
+        let score = 0;
+        let isGameOver = false;
+
+        const defenderLines = [-4, 0, 4];
 
         function init() {
             const container = document.getElementById('canvas-container');
 
-            // 1. Scene & Fog Setup
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(themes.sakura.bg);
-            scene.fog = new THREE.FogExp2(themes.sakura.fog, 0.035);
+            scene.background = new THREE.Color(0x080410);
+            scene.fog = new THREE.FogExp2(0x080410, 0.03);
 
-            // 2. Camera Setup
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 2.5, 7.5);
+            camera.position.set(0, 8, 12);
 
-            // 3. Renderer Setup
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1.2;
             container.appendChild(renderer.domElement);
 
-            // 4. Orbit Controls
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 2 + 0.05; // Prevent camera under floor
-            controls.minDistance = 2;
-            controls.maxDistance = 15;
-            controls.target.set(0, 1.8, 0);
 
-            // 5. Lighting Setup
-            setupLighting();
+            // Lights
+            const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambient);
+            const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+            sun.position.set(5, 12, 5);
+            scene.add(sun);
 
-            // 6. Environment & Floor
-            setupEnvironment();
+            setupCourt();
+            buildRosterUI();
+            spawnPlayer(0);
+            spawnDefenders();
+            setupControls();
 
-            // 7. Build Anime Character (Procedural)
-            createProceduralAnimeCharacter();
-
-            // 8. Particles System (Mana Sparks / Sakura)
-            createParticleSystem();
-
-            // Event Listeners
-            window.addEventListener('resize', onWindowResize);
-            setupUIControls();
-
-            // Start Animation Loop
+            window.addEventListener('resize', onResize);
             animate();
         }
 
-        // --- Lighting ---
-        let mainLight, rimLight, floorLight;
-        function setupLighting() {
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
+        // Gelanggang Galah Panjang
+        function setupCourt() {
+            const court = new THREE.Mesh(
+                new THREE.PlaneGeometry(10, 18),
+                new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.4 })
+            );
+            court.rotation.x = -Math.PI / 2;
+            scene.add(court);
 
-            mainLight = new THREE.DirectionalLight(0xffd5e5, 1.5);
-            mainLight.position.set(5, 8, 5);
-            mainLight.castShadow = true;
-            mainLight.shadow.mapSize.width = 2048;
-            mainLight.shadow.mapSize.height = 2048;
-            scene.add(mainLight);
+            const grid = new THREE.GridHelper(10, 1, 0xec4899, 0x444466);
+            grid.position.y = 0.01;
+            scene.add(grid);
 
-            rimLight = new THREE.DirectionalLight(themes.sakura.primary, 3.0);
-            rimLight.position.set(-5, 5, -5);
-            scene.add(rimLight);
-
-            floorLight = new THREE.PointLight(themes.sakura.primary, 2, 10);
-            floorLight.position.set(0, 0.2, 0);
-            scene.add(floorLight);
-        }
-
-        // --- Environment & Cyber Grid ---
-        let gridHelper;
-        function setupEnvironment() {
-            // Floor Mesh
-            const floorGeo = new THREE.PlaneGeometry(60, 60);
-            const floorMat = new THREE.MeshStandardMaterial({
-                color: 0x05050a,
-                roughness: 0.2,
-                metalness: 0.8
-            });
-            const floor = new THREE.Mesh(floorGeo, floorMat);
-            floor.rotation.x = -Math.PI / 2;
-            floor.receiveShadow = true;
-            scene.add(floor);
-
-            // Cyber Grid
-            gridHelper = new THREE.GridHelper(60, 60, themes.sakura.grid, 0x222233);
-            gridHelper.position.y = 0.01;
-            scene.add(gridHelper);
-
-            // Magic Circle (Rune Ground)
-            createMagicCircle();
-        }
-
-        // --- Magic Circle ---
-        function createMagicCircle() {
-            magicCircle = new THREE.Group();
-            
-            const ringGeo1 = new THREE.RingGeometry(1.8, 2.0, 32);
-            const ringGeo2 = new THREE.RingGeometry(2.2, 2.3, 32);
-            const ringMat = new THREE.MeshBasicMaterial({
-                color: themes.sakura.primary,
-                side: THREE.DoubleSide,
-                transparent: true,
-                opacity: 0.7
+            // Garisan Penjaga
+            defenderLines.forEach(z => {
+                const line = new THREE.Mesh(
+                    new THREE.BoxGeometry(10, 0.05, 0.2),
+                    new THREE.MeshBasicMaterial({ color: 0xec4899 })
+                );
+                line.position.set(0, 0.02, z);
+                scene.add(line);
             });
 
-            const ring1 = new THREE.Mesh(ringGeo1, ringMat);
-            const ring2 = new THREE.Mesh(ringGeo2, ringMat);
-            ring1.rotation.x = -Math.PI / 2;
-            ring2.rotation.x = -Math.PI / 2;
-
-            magicCircle.add(ring1);
-            magicCircle.add(ring2);
-
-            // Add inner geometric star (Octagram)
-            const starGeo = new THREE.BufferGeometry();
-            const vertices = [];
-            for(let i = 0; i <= 8; i++) {
-                const angle = (i / 8) * Math.PI * 2;
-                const r = (i % 2 === 0) ? 1.8 : 0.8;
-                vertices.push(Math.cos(angle) * r, 0, Math.sin(angle) * r);
-            }
-            starGeo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-            const starMat = new THREE.LineBasicMaterial({ color: themes.sakura.primary, transparent: true, opacity: 0.8 });
-            const star = new THREE.Line(starGeo, starMat);
-            magicCircle.add(star);
-
-            magicCircle.position.y = 0.02;
-            scene.add(magicCircle);
+            // Garisan Penamat
+            const finishLine = new THREE.Mesh(
+                new THREE.BoxGeometry(10, 0.05, 0.3),
+                new THREE.MeshBasicMaterial({ color: 0x10b981 })
+            );
+            finishLine.position.set(0, 0.02, -7.5);
+            scene.add(finishLine);
         }
 
-        // --- Toon Material Helper ---
-        function createToonMaterial(colorHex, outline = true) {
-            // Create a 3-step toon gradient map texture
-            const canvas = document.createElement('canvas');
-            canvas.width = 4;
-            canvas.height = 1;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#444444'; ctx.fillRect(0, 0, 1, 1);
-            ctx.fillStyle = '#888888'; ctx.fillRect(1, 0, 1, 1);
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(2, 0, 2, 1);
+        // Bina Pemain Mengikut Watak Yang Dipilih (1 daripada 10)
+        function spawnPlayer(index) {
+            if (playerGroup) scene.remove(playerGroup);
 
-            const gradientMap = new THREE.CanvasTexture(canvas);
-            gradientMap.minFilter = THREE.NearestFilter;
-            gradientMap.magFilter = THREE.NearestFilter;
+            const char = characterList[index];
+            playerGroup = new THREE.Group();
+            const mat = new THREE.MeshToonMaterial({ color: char.color });
+            const skinMat = new THREE.MeshToonMaterial({ color: 0xffdfd3 });
 
-            return new THREE.MeshToonMaterial({
-                color: colorHex,
-                gradientMap: gradientMap
-            });
-        }
+            if (char.type === "humanoid" || char.type === "mech") {
+                const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.2, 0.9, 8), mat);
+                body.position.y = 0.45;
+                playerGroup.add(body);
 
-        // --- Build Procedural Anime Character ---
-        function createProceduralAnimeCharacter() {
-            characterGroup = new THREE.Group();
+                const head = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.5, 6), skinMat);
+                head.rotation.x = Math.PI;
+                head.position.y = 1.1;
+                playerGroup.add(head);
 
-            const skinMat = createToonMaterial(0xffdfd3);
-            const hairMat = createToonMaterial(themes.sakura.primary);
-            const armorMat = createToonMaterial(0x1e1e2f);
-            const goldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.9 });
-            const glowMat = new THREE.MeshBasicMaterial({ color: themes.sakura.primary });
+                const visor = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.18), new THREE.MeshBasicMaterial({ color: char.color }));
+                visor.position.set(0, 1.1, 0.12);
+                playerGroup.add(visor);
 
-            // 1. Head
-            const headGeo = new THREE.ConeGeometry(0.35, 0.6, 6);
-            headGeo.rotateX(Math.PI);
-            const head = new THREE.Mesh(headGeo, skinMat);
-            head.position.y = 2.4;
-            head.scale.set(1, 1.2, 0.9);
-            characterGroup.add(head);
+            } else {
+                const body = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 16), mat);
+                body.position.y = 0.45;
+                playerGroup.add(body);
 
-            // Hair (Anime Spikes / Twintails)
-            const hairGroup = new THREE.Group();
-            for(let i = 0; i < 9; i++) {
-                const spikeGeo = new THREE.ConeGeometry(0.08, 0.5, 4);
-                const spike = new THREE.Mesh(spikeGeo, hairMat);
-                spike.position.set((Math.random()-0.5)*0.5, 2.5 + Math.random()*0.2, (Math.random()-0.5)*0.4 - 0.1);
-                spike.rotation.set((Math.random()-0.5)*0.5, 0, (Math.random()-0.5)*0.8);
-                hairGroup.add(spike);
-            }
-            characterGroup.add(hairGroup);
-
-            // Glowing Anime Eyes Visor
-            const visorGeo = new THREE.BoxGeometry(0.32, 0.08, 0.2);
-            const visor = new THREE.Mesh(visorGeo, glowMat);
-            visor.position.set(0, 2.42, 0.18);
-            characterGroup.add(visor);
-
-            // 2. Torso Armor
-            const torsoGeo = new THREE.CylinderGeometry(0.28, 0.18, 0.7, 6);
-            const torso = new THREE.Mesh(torsoGeo, armorMat);
-            torso.position.y = 1.8;
-            characterGroup.add(torso);
-
-            // Chestplate Accent
-            const chestGeo = new THREE.BoxGeometry(0.24, 0.2, 0.1);
-            const chest = new THREE.Mesh(chestGeo, goldMat);
-            chest.position.set(0, 1.9, 0.12);
-            characterGroup.add(chest);
-
-            // 3. Limbs (Arms & Legs)
-            // Shoulders (Pauldrons)
-            const shoulderGeo = new THREE.SphereGeometry(0.14, 8, 8);
-            const shoulderL = new THREE.Mesh(shoulderGeo, armorMat);
-            const shoulderR = new THREE.Mesh(shoulderGeo, armorMat);
-            shoulderL.position.set(0.38, 2.0, 0);
-            shoulderR.position.set(-0.38, 2.0, 0);
-            characterGroup.add(shoulderL); characterGroup.add(shoulderR);
-
-            // Legs
-            const legGeo = new THREE.CylinderGeometry(0.09, 0.06, 1.1, 8);
-            const legL = new THREE.Mesh(legGeo, armorMat);
-            const legR = new THREE.Mesh(legGeo, armorMat);
-            legL.position.set(0.15, 0.85, 0);
-            legR.position.set(-0.15, 0.85, 0);
-            characterGroup.add(legL); characterGroup.add(legR);
-
-            // 4. Weapons (Katana)
-            const katanaGroup = new THREE.Group();
-            const bladeGeo = new THREE.BoxGeometry(0.03, 1.2, 0.01);
-            const blade = new THREE.Mesh(bladeGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.9, roughness: 0.1 }));
-            blade.position.y = 0.6;
-            katanaGroup.add(blade);
-            katanaGroup.position.set(0.45, 1.2, 0.2);
-            katanaGroup.rotation.set(0.4, 0, -0.3);
-            characterGroup.add(katanaGroup);
-
-            // 5. Anime Energy Wings
-            createEnergyWings();
-            characterGroup.add(wingsGroup);
-
-            // Enable Shadows
-            characterGroup.traverse((child) => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                }
-            });
-
-            characterGroup.position.y = 0.3; // Floating stance
-            scene.add(characterGroup);
-        }
-
-        // --- Energy Wings ---
-        function createEnergyWings() {
-            wingsGroup = new THREE.Group();
-            wingsGroup.position.set(0, 1.9, -0.2);
-
-            const wingMat = new THREE.MeshBasicMaterial({
-                color: themes.sakura.primary,
-                transparent: true,
-                opacity: 0.7,
-                side: THREE.DoubleSide
-            });
-
-            for(let side = -1; side <= 1; side += 2) {
-                if(side === 0) continue;
-                const wingShape = new THREE.Shape();
-                wingShape.moveTo(0, 0);
-                wingShape.quadraticCurveTo(0.8 * side, 0.8, 1.8 * side, 0.4);
-                wingShape.quadraticCurveTo(1.2 * side, -0.2, 0, -0.5);
-
-                const wingGeo = new THREE.ShapeGeometry(wingShape);
-                const wing = new THREE.Mesh(wingGeo, wingMat);
-                wing.scale.set(0.9, 0.9, 0.9);
-                wingsGroup.add(wing);
-            }
-        }
-
-        // --- Particle System (Sakura/Mana) ---
-        function createParticleSystem() {
-            const particleCount = 200;
-            const geometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(particleCount * 3);
-            const scales = new Float32Array(particleCount);
-
-            for (let i = 0; i < particleCount * 3; i += 3) {
-                positions[i] = (Math.random() - 0.5) * 20;
-                positions[i + 1] = Math.random() * 10;
-                positions[i + 2] = (Math.random() - 0.5) * 20;
-                scales[i / 3] = Math.random() * 0.08 + 0.02;
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), skinMat);
+                head.position.set(0, 0.85, 0.15);
+                playerGroup.add(head);
             }
 
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            
-            const pMat = new THREE.PointsMaterial({
-                color: themes.sakura.primary,
-                size: 0.15,
-                transparent: true,
-                opacity: 0.8,
-                blending: THREE.AdditiveBlending
-            });
-
-            particleSystem = new THREE.Points(geometry, pMat);
-            scene.add(particleSystem);
+            playerGroup.position.set(0, 0, 7.5);
+            scene.add(playerGroup);
         }
 
-        // --- Theme Switcher ---
-        window.setTheme = function(themeName) {
-            currentTheme = themeName;
-            const t = themes[themeName];
+        // Cipta 3 Penjaga Garisan Merah (AI)
+        function spawnDefenders() {
+            defenders.forEach(d => scene.remove(d));
+            defenders = [];
 
-            scene.background.setHex(t.bg);
-            scene.fog.color.setHex(t.fog);
-            rimLight.color.setHex(t.primary);
-            floorLight.color.setHex(t.primary);
-            gridHelper.material.color.setHex(t.grid);
+            defenderLines.forEach((z, index) => {
+                const def = new THREE.Group();
+                const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 1.1, 8), new THREE.MeshToonMaterial({ color: 0xef4444 }));
+                body.position.y = 0.55;
+                def.add(body);
 
-            if(particleSystem) particleSystem.material.color.setHex(t.primary);
-            if(magicCircle) {
-                magicCircle.children.forEach(c => {
-                    if(c.material) c.material.color.setHex(t.primary);
-                });
-            }
-        };
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshToonMaterial({ color: 0xffdfd3 }));
+                head.position.y = 1.25;
+                def.add(head);
 
-        // --- UI Interactions & GLB Loader ---
-        function setupUIControls() {
-            // Audio Synth Toggle (Tone.js)
-            let isPlaying = false;
-            let synth, loop;
-            document.getElementById('audio-btn').addEventListener('click', async () => {
-                const icon = document.getElementById('audio-icon');
-                if (!isPlaying) {
-                    await Tone.start();
-                    synth = new THREE.Tone ? null : new Tone.PolySynth(Tone.Synth).toDestination();
-                    synth.volume.value = -12;
-                    
-                    // Simple Cyber Ambient Loop
-                    const notes = ["C3", "E3", "G3", "B3", "C4"];
-                    let step = 0;
-                    Tone.Transport.scheduleRepeat((time) => {
-                        let note = notes[step % notes.length];
-                        synth.triggerAttackRelease(note, "8n", time);
-                        step++;
-                    }, "4n");
-
-                    Tone.Transport.start();
-                    icon.className = "fa-solid fa-volume-high text-pink-400 animate-pulse";
-                    isPlaying = true;
-                } else {
-                    Tone.Transport.stop();
-                    icon.className = "fa-solid fa-volume-xmark text-lg";
-                    isPlaying = false;
-                }
-            });
-
-            // Action Buttons
-            document.getElementById('btn-pose').addEventListener('click', () => {
-                if(characterGroup) {
-                    characterGroup.rotation.y += Math.PI / 4;
-                }
-            });
-
-            document.getElementById('btn-charge').addEventListener('click', () => {
-                const manaBar = document.getElementById('mana-bar');
-                manaBar.style.width = '100%';
-                setTimeout(() => { manaBar.style.width = '40%'; }, 2000);
-            });
-
-            document.getElementById('btn-burst').addEventListener('click', () => {
-                isBurstMode = !isBurstMode;
-                const btn = document.getElementById('btn-burst');
-                if(isBurstMode) {
-                    btn.classList.add('scale-110', 'brightness-150');
-                    renderer.toneMappingExposure = 2.0;
-                } else {
-                    btn.classList.remove('scale-110', 'brightness-150');
-                    renderer.toneMappingExposure = 1.2;
-                }
-            });
-
-            // GLB File Loader (User Custom Model)
-            document.getElementById('glb-upload').addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                const url = URL.createObjectURL(file);
-                const loader = new THREE.GLTFLoader();
-
-                loader.load(url, (gltf) => {
-                    if (characterGroup) scene.remove(characterGroup);
-                    characterGroup = gltf.scene;
-
-                    // Auto Adjust Scale & Shadows
-                    const box = new THREE.Box3().setFromObject(characterGroup);
-                    const size = box.getSize(new THREE.Vector3());
-                    const scaleFactor = 3.0 / size.y;
-                    characterGroup.scale.set(scaleFactor, scaleFactor, scaleFactor);
-
-                    characterGroup.traverse((child) => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                        }
-                    });
-
-                    scene.add(characterGroup);
-                    customModelLoaded = true;
-                });
+                def.position.set(0, 0, z);
+                def.userData = { dir: index % 2 === 0 ? 1 : -1, speed: 0.045 + index * 0.015 };
+                scene.add(def);
+                defenders.push(def);
             });
         }
 
-        // --- Window Resize ---
-        function onWindowResize() {
+        function buildRosterUI() {
+            const container = document.getElementById('roster-container');
+            container.innerHTML = '';
+            characterList.forEach((char, index) => {
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left p-1.5 rounded-xl text-xs flex items-center space-x-2 transition border ${
+                    index === 0 ? 'bg-pink-500/30 border-pink-400 text-white font-bold' : 'bg-black/30 border-white/10 text-gray-300'
+                }`;
+                btn.id = `btn-char-${index}`;
+                btn.onclick = () => {
+                    document.getElementById(`btn-char-${currentSelection}`).className = "w-full text-left p-1.5 rounded-xl text-xs flex items-center space-x-2 transition border bg-black/30 border-white/10 text-gray-300";
+                    btn.className = "w-full text-left p-1.5 rounded-xl text-xs flex items-center space-x-2 transition border bg-pink-500/30 border-pink-400 text-white font-bold";
+                    currentSelection = index;
+                    spawnPlayer(index);
+                };
+                btn.innerHTML = `<div class="w-3 h-3 rounded-full" style="background:#${char.color.toString(16)}"></div><span class="truncate">${char.name}</span>`;
+                container.appendChild(btn);
+            });
+        }
+
+        function resetGame() {
+            if (playerGroup) playerGroup.position.set(0, 0, 7.5);
+            isGameOver = false;
+            document.getElementById('status-text').innerText = "LEPASI GARISAN 1";
+            document.getElementById('status-text').className = "";
+        }
+
+        function setupControls() {
+            window.addEventListener('keydown', (e) => {
+                if(e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') moveState.up = true;
+                if(e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') moveState.down = true;
+                if(e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') moveState.left = true;
+                if(e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') moveState.right = true;
+            });
+            window.addEventListener('keyup', (e) => {
+                if(e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') moveState.up = false;
+                if(e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') moveState.down = false;
+                if(e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') moveState.left = false;
+                if(e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') moveState.right = false;
+            });
+
+            const bind = (id, k) => {
+                const b = document.getElementById(id);
+                b.ontouchstart = (e) => { e.preventDefault(); moveState[k] = true; };
+                b.ontouchend = (e) => { e.preventDefault(); moveState[k] = false; };
+            };
+            bind('btn-up','up'); bind('btn-down','down'); bind('btn-left','left'); bind('btn-right','right');
+
+            document.getElementById('btn-reset').onclick = resetGame;
+        }
+
+        function onResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // --- Animation Loop ---
         function animate() {
             requestAnimationFrame(animate);
 
-            const delta = clock.getDelta();
-            const elapsedTime = clock.getElapsedTime();
+            if (!isGameOver && playerGroup) {
+                const speed = 0.08;
+                if (moveState.up && playerGroup.position.z > -8) playerGroup.position.z -= speed;
+                if (moveState.down && playerGroup.position.z < 8) playerGroup.position.z += speed;
+                if (moveState.left && playerGroup.position.x > -4.5) playerGroup.position.x -= speed;
+                if (moveState.right && playerGroup.position.x < 4.5) playerGroup.position.x += speed;
 
-            // 1. Idle Floating Animation for Character
-            if (characterGroup && !customModelLoaded) {
-                characterGroup.position.y = 0.3 + Math.sin(elapsedTime * 2) * 0.08;
-            }
+                // AI Penjaga Gerak Kiri-Kanan
+                defenders.forEach(def => {
+                    def.position.x += def.userData.speed * def.userData.dir;
+                    if (def.position.x > 4 || def.position.x < -4) def.userData.dir *= -1;
 
-            // 2. Wing Flap Animation
-            if (wingsGroup) {
-                wingsGroup.children.forEach((wing, index) => {
-                    const side = index === 0 ? 1 : -1;
-                    wing.rotation.y = Math.sin(elapsedTime * 3) * 0.2 * side;
+                    // Semak Pelanggaran
+                    if (playerGroup.position.distanceTo(def.position) < 0.7) {
+                        isGameOver = true;
+                        document.getElementById('status-text').innerText = "TERTANGKAP! GAME OVER";
+                        document.getElementById('status-text').className = "text-rose-500 font-bold";
+                    }
                 });
-            }
 
-            // 3. Magic Circle Rotation
-            if (magicCircle) {
-                magicCircle.rotation.y += 0.005;
-            }
-
-            // 4. Particle Floating Animation
-            if (particleSystem) {
-                const positions = particleSystem.geometry.attributes.position.array;
-                for (let i = 1; i < positions.length; i += 3) {
-                    positions[i] -= 0.015;
-                    if (positions[i] < 0) positions[i] = 10;
+                // Menang / Skor
+                if (playerGroup.position.z <= -7.5) {
+                    score += 100;
+                    document.getElementById('score-text').innerText = score;
+                    document.getElementById('status-text').innerText = "BERJAYA LEPAS! +100 SKOR";
+                    playerGroup.position.set(0, 0, 7.5);
                 }
-                particleSystem.geometry.attributes.position.needsUpdate = true;
-            }
 
-            // 5. Burst Mode Camera Shake & Lights
-            if (isBurstMode) {
-                camera.position.x += (Math.random() - 0.5) * 0.02;
-                floorLight.intensity = 4 + Math.sin(elapsedTime * 10) * 2;
+                camera.position.x = playerGroup.position.x * 0.3;
+                camera.position.z = playerGroup.position.z + 8;
+                controls.target.set(playerGroup.position.x * 0.2, 0.5, playerGroup.position.z - 2);
             }
 
             controls.update();
             renderer.render(scene, camera);
         }
 
-        // Initialize App on Load
         window.onload = init;
     </script>
 </body>
