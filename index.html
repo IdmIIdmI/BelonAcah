@@ -2,103 +2,93 @@
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Galah Panjang - 10 Watak Anime</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D Galah Panjang Game</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; }
         body { overflow: hidden; background-color: #030308; font-family: sans-serif; }
-        #canvas-container { width: 100vw; height: 100vh; position: absolute; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
         
         .glass-panel {
-            background: rgba(12, 12, 24, 0.75);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(12, 12, 24, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
         
         .dpad-btn {
-            background: rgba(236, 72, 153, 0.3);
-            border: 1px solid rgba(236, 72, 153, 0.6);
-            backdrop-filter: blur(8px);
-            border-radius: 14px;
+            background: rgba(236, 72, 153, 0.4);
+            border: 1px solid rgba(236, 72, 153, 0.8);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
         }
-        .dpad-btn:active { background: rgba(236, 72, 153, 0.8); }
-
-        .roster-scroll::-webkit-scrollbar { width: 4px; }
-        .roster-scroll::-webkit-scrollbar-thumb { background: rgba(236, 72, 153, 0.6); border-radius: 4px; }
+        .dpad-btn:active { background: rgba(236, 72, 153, 0.9); }
     </style>
 </head>
 <body class="relative min-h-screen text-white overflow-hidden">
 
+    <!-- 3D Canvas -->
     <div id="canvas-container"></div>
 
-    <!-- TOP HUD -->
+    <!-- HUD PENGALAMAN -->
     <div class="absolute top-4 left-4 z-20 glass-panel p-3 rounded-2xl flex items-center space-x-3 border-l-4 border-pink-500 max-w-xs w-full">
         <div class="w-10 h-10 rounded-xl bg-pink-500/20 border border-pink-400 flex items-center justify-center font-bold text-pink-300">
             <i class="fa-solid fa-trophy"></i>
         </div>
         <div>
-            <div id="char-name-hud" class="text-xs font-bold text-pink-300 font-mono">GALAH PANJANG 3D</div>
-            <div class="text-[11px] text-emerald-400 mt-0.5">SKOR: <span id="score-text">0</span> | <span id="status-text">LEPASI GARISAN 1</span></div>
+            <div class="text-xs font-bold text-pink-300 font-mono">GALAH PANJANG 3D</div>
+            <div class="text-[11px] text-emerald-400 mt-0.5">SKOR: <span id="score-text">0</span> | <span id="status-text" class="text-gray-300">LEPASI GARISAN</span></div>
         </div>
     </div>
 
-    <!-- RIGHT HUD: 10 Character Roster Selector -->
-    <div class="absolute top-20 right-4 z-20 glass-panel p-3 rounded-2xl border border-pink-500/30 max-h-[60vh] flex flex-col pointer-events-auto w-44">
-        <div class="text-xs font-bold text-pink-300 mb-2 border-b border-white/10 pb-1 flex justify-between">
-            <span>PILIH WATAK</span>
-            <span class="text-[9px] bg-pink-500/30 text-pink-200 px-1 rounded">10 ROSTER</span>
-        </div>
-        <div id="roster-container" class="roster-scroll space-y-1.5 overflow-y-auto pr-1"></div>
+    <!-- ROSTER 10 WATAK -->
+    <div class="absolute top-20 right-4 z-20 glass-panel p-2 rounded-xl border border-pink-500/30 max-h-[55vh] flex flex-col pointer-events-auto w-36">
+        <div class="text-[11px] font-bold text-pink-300 mb-1 pb-1 border-b border-white/10 text-center">10 WATAK 3D</div>
+        <div id="roster-container" class="space-y-1 overflow-y-auto pr-1"></div>
     </div>
 
-    <!-- TOUCH CONTROLS (D-PAD) -->
-    <div class="absolute bottom-6 left-6 z-20 grid grid-cols-3 gap-2 w-36 h-36 md:hidden pointer-events-auto">
+    <!-- KAWALAN D-PAD SKRIN -->
+    <div class="absolute bottom-6 left-6 z-20 grid grid-cols-3 gap-2 w-36 h-36 pointer-events-auto">
         <div></div>
         <button id="btn-up" class="dpad-btn"><i class="fa-solid fa-arrow-up"></i></button>
         <div></div>
         <button id="btn-left" class="dpad-btn"><i class="fa-solid fa-arrow-left"></i></button>
-        <div class="flex items-center justify-center text-[9px] font-bold text-pink-400">MOVE</div>
+        <div class="flex items-center justify-center text-[9px] font-bold text-pink-400">PAD</div>
         <button id="btn-right" class="dpad-btn"><i class="fa-solid fa-arrow-right"></i></button>
         <div></div>
         <button id="btn-down" class="dpad-btn"><i class="fa-solid fa-arrow-down"></i></button>
         <div></div>
     </div>
 
-    <!-- RESET BUTTON -->
+    <!-- BUTANG RESET -->
     <div class="absolute bottom-6 right-6 z-20 pointer-events-auto">
-        <button id="btn-reset" class="glass-panel px-5 py-3 rounded-xl border border-pink-500/40 text-pink-300 font-bold text-xs hover:bg-pink-500/30">MAIN SEMULA</button>
+        <button id="btn-reset" class="glass-panel px-4 py-3 rounded-xl border border-pink-500/40 text-pink-300 font-bold text-xs active:scale-95">MULA SEMULA</button>
     </div>
 
     <script>
-        // 10 Watak Anime 3D Instant
         const characterList = [
-            { id: 0, name: "Valkyrie Mech", color: 0xec4899, type: "humanoid" },
-            { id: 1, name: "Kitsune Fox", color: 0xf97316, type: "beast" },
-            { id: 2, name: "Cyber Knight", color: 0x06b6d4, type: "humanoid" },
-            { id: 3, name: "Heavy Cyborg", color: 0x64748b, type: "mech" },
-            { id: 4, name: "Shadow Ninja", color: 0x10b981, type: "humanoid" },
-            { id: 5, name: "Celestial Mage", color: 0x8b5cf6, type: "humanoid" },
-            { id: 6, name: "Emperor Mech", color: 0xeab308, type: "mech" },
-            { id: 7, name: "Neko Mascot", color: 0xf43f5e, type: "chibi" },
-            { id: 8, name: "Plasma Android", color: 0x3b82f6, type: "humanoid" },
-            { id: 9, name: "Titan Sentinel", color: 0xef4444, type: "mech" }
+            { id: 0, name: "Valkyrie", color: 0xec4899 },
+            { id: 1, name: "Kitsune", color: 0xf97316 },
+            { id: 2, name: "Knight", color: 0x06b6d4 },
+            { id: 3, name: "Cyborg", color: 0x64748b },
+            { id: 4, name: "Ninja", color: 0x10b981 },
+            { id: 5, name: "Mage", color: 0x8b5cf6 },
+            { id: 6, name: "Emperor", color: 0xeab308 },
+            { id: 7, name: "Neko", color: 0xf43f5e },
+            { id: 8, name: "Android", color: 0x3b82f6 },
+            { id: 9, name: "Titan", color: 0xef4444 }
         ];
 
-        let scene, camera, renderer, controls;
+        let scene, camera, renderer;
         let playerGroup, defenders = [];
-        let clock = new THREE.Clock();
         let moveState = { up: false, down: false, left: false, right: false };
         let currentSelection = 0;
         let score = 0;
@@ -109,30 +99,32 @@
         function init() {
             const container = document.getElementById('canvas-container');
 
+            // 1. Scene & Camera Setup
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x080410);
-            scene.fog = new THREE.FogExp2(0x080410, 0.03);
+            scene.background = new THREE.Color(0x0a0412);
 
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 8, 12);
+            camera.position.set(0, 9, 13);
+            camera.lookAt(0, 0, 0);
 
+            // 2. Renderer
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
             container.appendChild(renderer.domElement);
 
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-
-            // Lights
-            const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+            // 3. Lights
+            const ambient = new THREE.AmbientLight(0xffffff, 0.9);
             scene.add(ambient);
-            const sun = new THREE.DirectionalLight(0xffffff, 1.4);
-            sun.position.set(5, 12, 5);
-            scene.add(sun);
 
+            const light = new THREE.DirectionalLight(0xffffff, 1.2);
+            light.position.set(5, 10, 5);
+            scene.add(light);
+
+            // 4. Gelanggang Galah Panjang
             setupCourt();
+
+            // 5. Build Roster & Spawn Character
             buildRosterUI();
             spawnPlayer(0);
             spawnDefenders();
@@ -142,16 +134,16 @@
             animate();
         }
 
-        // Gelanggang Galah Panjang
         function setupCourt() {
+            // Tapak Gelanggang
             const court = new THREE.Mesh(
                 new THREE.PlaneGeometry(10, 18),
-                new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.4 })
+                new THREE.MeshLambertMaterial({ color: 0x111122 })
             );
             court.rotation.x = -Math.PI / 2;
             scene.add(court);
 
-            const grid = new THREE.GridHelper(10, 1, 0xec4899, 0x444466);
+            const grid = new THREE.GridHelper(10, 2, 0xec4899, 0x333355);
             grid.position.y = 0.01;
             scene.add(grid);
 
@@ -174,60 +166,44 @@
             scene.add(finishLine);
         }
 
-        // Bina Pemain Mengikut Watak Yang Dipilih (1 daripada 10)
         function spawnPlayer(index) {
             if (playerGroup) scene.remove(playerGroup);
 
             const char = characterList[index];
             playerGroup = new THREE.Group();
-            const mat = new THREE.MeshToonMaterial({ color: char.color });
-            const skinMat = new THREE.MeshToonMaterial({ color: 0xffdfd3 });
 
-            if (char.type === "humanoid" || char.type === "mech") {
-                const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.2, 0.9, 8), mat);
-                body.position.y = 0.45;
-                playerGroup.add(body);
+            const mat = new THREE.MeshLambertMaterial({ color: char.color });
+            const skinMat = new THREE.MeshLambertMaterial({ color: 0xffdfd3 });
 
-                const head = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.5, 6), skinMat);
-                head.rotation.x = Math.PI;
-                head.position.y = 1.1;
-                playerGroup.add(head);
+            // Body & Head
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.2, 0.9, 8), mat);
+            body.position.y = 0.45;
+            playerGroup.add(body);
 
-                const visor = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.18), new THREE.MeshBasicMaterial({ color: char.color }));
-                visor.position.set(0, 1.1, 0.12);
-                playerGroup.add(visor);
-
-            } else {
-                const body = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 16), mat);
-                body.position.y = 0.45;
-                playerGroup.add(body);
-
-                const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), skinMat);
-                head.position.set(0, 0.85, 0.15);
-                playerGroup.add(head);
-            }
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), skinMat);
+            head.position.y = 1.05;
+            playerGroup.add(head);
 
             playerGroup.position.set(0, 0, 7.5);
             scene.add(playerGroup);
         }
 
-        // Cipta 3 Penjaga Garisan Merah (AI)
         function spawnDefenders() {
             defenders.forEach(d => scene.remove(d));
             defenders = [];
 
             defenderLines.forEach((z, index) => {
                 const def = new THREE.Group();
-                const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 1.1, 8), new THREE.MeshToonMaterial({ color: 0xef4444 }));
+                const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 1.1, 8), new THREE.MeshLambertMaterial({ color: 0xef4444 }));
                 body.position.y = 0.55;
                 def.add(body);
 
-                const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshToonMaterial({ color: 0xffdfd3 }));
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshLambertMaterial({ color: 0xffdfd3 }));
                 head.position.y = 1.25;
                 def.add(head);
 
                 def.position.set(0, 0, z);
-                def.userData = { dir: index % 2 === 0 ? 1 : -1, speed: 0.045 + index * 0.015 };
+                def.userData = { dir: index % 2 === 0 ? 1 : -1, speed: 0.05 + index * 0.015 };
                 scene.add(def);
                 defenders.push(def);
             });
@@ -238,17 +214,17 @@
             container.innerHTML = '';
             characterList.forEach((char, index) => {
                 const btn = document.createElement('button');
-                btn.className = `w-full text-left p-1.5 rounded-xl text-xs flex items-center space-x-2 transition border ${
-                    index === 0 ? 'bg-pink-500/30 border-pink-400 text-white font-bold' : 'bg-black/30 border-white/10 text-gray-300'
+                btn.className = `w-full text-left p-1 rounded text-[10px] flex items-center space-x-1 border ${
+                    index === 0 ? 'bg-pink-500/40 border-pink-400 text-white font-bold' : 'bg-black/40 border-white/10 text-gray-300'
                 }`;
                 btn.id = `btn-char-${index}`;
                 btn.onclick = () => {
-                    document.getElementById(`btn-char-${currentSelection}`).className = "w-full text-left p-1.5 rounded-xl text-xs flex items-center space-x-2 transition border bg-black/30 border-white/10 text-gray-300";
-                    btn.className = "w-full text-left p-1.5 rounded-xl text-xs flex items-center space-x-2 transition border bg-pink-500/30 border-pink-400 text-white font-bold";
+                    document.getElementById(`btn-char-${currentSelection}`).className = "w-full text-left p-1 rounded text-[10px] flex items-center space-x-1 border bg-black/40 border-white/10 text-gray-300";
+                    btn.className = "w-full text-left p-1 rounded text-[10px] flex items-center space-x-1 border bg-pink-500/40 border-pink-400 text-white font-bold";
                     currentSelection = index;
                     spawnPlayer(index);
                 };
-                btn.innerHTML = `<div class="w-3 h-3 rounded-full" style="background:#${char.color.toString(16)}"></div><span class="truncate">${char.name}</span>`;
+                btn.innerHTML = `<div class="w-2.5 h-2.5 rounded-full" style="background:#${char.color.toString(16)}"></div><span class="truncate">${char.name}</span>`;
                 container.appendChild(btn);
             });
         }
@@ -256,28 +232,17 @@
         function resetGame() {
             if (playerGroup) playerGroup.position.set(0, 0, 7.5);
             isGameOver = false;
-            document.getElementById('status-text').innerText = "LEPASI GARISAN 1";
-            document.getElementById('status-text').className = "";
+            document.getElementById('status-text').innerText = "LEPASI GARISAN";
+            document.getElementById('status-text').className = "text-gray-300";
         }
 
         function setupControls() {
-            window.addEventListener('keydown', (e) => {
-                if(e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') moveState.up = true;
-                if(e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') moveState.down = true;
-                if(e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') moveState.left = true;
-                if(e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') moveState.right = true;
-            });
-            window.addEventListener('keyup', (e) => {
-                if(e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') moveState.up = false;
-                if(e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') moveState.down = false;
-                if(e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') moveState.left = false;
-                if(e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') moveState.right = false;
-            });
-
             const bind = (id, k) => {
                 const b = document.getElementById(id);
-                b.ontouchstart = (e) => { e.preventDefault(); moveState[k] = true; };
-                b.ontouchend = (e) => { e.preventDefault(); moveState[k] = false; };
+                b.addEventListener('touchstart', (e) => { e.preventDefault(); moveState[k] = true; });
+                b.addEventListener('touchend', (e) => { e.preventDefault(); moveState[k] = false; });
+                b.addEventListener('mousedown', () => moveState[k] = true);
+                b.addEventListener('mouseup', () => moveState[k] = false);
             };
             bind('btn-up','up'); bind('btn-down','down'); bind('btn-left','left'); bind('btn-right','right');
 
@@ -300,33 +265,33 @@
                 if (moveState.left && playerGroup.position.x > -4.5) playerGroup.position.x -= speed;
                 if (moveState.right && playerGroup.position.x < 4.5) playerGroup.position.x += speed;
 
-                // AI Penjaga Gerak Kiri-Kanan
+                // Pergerakan Musuh
                 defenders.forEach(def => {
                     def.position.x += def.userData.speed * def.userData.dir;
                     if (def.position.x > 4 || def.position.x < -4) def.userData.dir *= -1;
 
-                    // Semak Pelanggaran
-                    if (playerGroup.position.distanceTo(def.position) < 0.7) {
+                    // Pelanggaran
+                    if (playerGroup.position.distanceTo(def.position) < 0.65) {
                         isGameOver = true;
-                        document.getElementById('status-text').innerText = "TERTANGKAP! GAME OVER";
-                        document.getElementById('status-text').className = "text-rose-500 font-bold";
+                        document.getElementById('status-text').innerText = "TERTANGKAP!";
+                        document.getElementById('status-text').className = "text-rose-500 font-bold animate-pulse";
                     }
                 });
 
-                // Menang / Skor
+                // Menang
                 if (playerGroup.position.z <= -7.5) {
                     score += 100;
                     document.getElementById('score-text').innerText = score;
-                    document.getElementById('status-text').innerText = "BERJAYA LEPAS! +100 SKOR";
+                    document.getElementById('status-text').innerText = "+100 SKOR!";
                     playerGroup.position.set(0, 0, 7.5);
                 }
 
-                camera.position.x = playerGroup.position.x * 0.3;
-                camera.position.z = playerGroup.position.z + 8;
-                controls.target.set(playerGroup.position.x * 0.2, 0.5, playerGroup.position.z - 2);
+                // Kamera Ikut
+                camera.position.x = playerGroup.position.x * 0.2;
+                camera.position.z = playerGroup.position.z + 7.5;
+                camera.lookAt(playerGroup.position.x * 0.2, 0.5, playerGroup.position.z - 1.5);
             }
 
-            controls.update();
             renderer.render(scene, camera);
         }
 
