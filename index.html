@@ -1,315 +1,603 @@
 <!DOCTYPE html>
-<html lang="ms">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Galah Bedezup Online</title>
-    <!-- PeerJS untuk Serverless Real-time Online Multiplayer Gratis -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Anime Cyberpunk Scene</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { background: #121212; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+        body { margin: 0; overflow: hidden; background-color: #050508; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
         
-        #game-container { position: relative; width: 360px; height: 640px; background: #2e7d32; border: 4px solid #fff; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.8); overflow: hidden; display: flex; flex-direction: column; }
-        
-        /* Top Header UI */
-        .header { background: rgba(0,0,0,0.7); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; z-index: 10; font-size: 13px; font-weight: bold; }
-        .gold { color: #ffd700; }
-        
-        /* Game Canvas */
-        canvas { background: #388e3c; flex: 1; display: block; }
+        /* Glassmorphism Styling */
+        .glass-panel {
+            background: rgba(15, 15, 25, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
 
-        /* Overlays & Screens */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20; text-align: center; padding: 20px; }
-        h1 { color: #ffeb3b; font-size: 26px; margin-bottom: 8px; text-shadow: 2px 2px #d32f2f; }
-        p { margin-bottom: 15px; font-size: 13px; color: #ccc; }
-        
-        /* Buttons & Inputs */
-        .btn { background: #ff9800; color: #fff; border: none; padding: 12px 20px; font-size: 15px; font-weight: bold; border-radius: 25px; cursor: pointer; margin: 5px; width: 80%; box-shadow: 0 4px #e65100; transition: 0.1s; }
-        .btn:active { transform: translateY(2px); box-shadow: 0 1px #e65100; }
-        .btn-blue { background: #2196f3; box-shadow: 0 4px #0d47a1; }
-        .btn-green { background: #4caf50; box-shadow: 0 4px #1b5e20; }
-        
-        input[type="text"] { width: 80%; padding: 10px; border-radius: 8px; border: 2px solid #ff9800; text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+        /* Scanline Overlay */
+        .scanlines {
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 3px, 6px 100%;
+            pointer-events: none;
+        }
 
-        /* Controls Panel */
-        .controls { position: absolute; bottom: 15px; left: 0; width: 100%; display: flex; justify-content: space-evenly; padding: 0 10px; z-index: 10; }
-        .btn-lane { width: 90px; height: 60px; background: #ff5722; border: 2px solid #fff; border-radius: 12px; color: #fff; font-size: 16px; font-weight: bold; box-shadow: 0 4px #bf360c; cursor: pointer; }
-        .btn-lane:active { transform: translateY(2px); box-shadow: 0 1px #bf360c; }
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(236, 72, 153, 0.5); border-radius: 2px; }
 
-        /* Status Toast */
-        #msg-box { position: absolute; top: 60px; width: 100%; text-align: center; font-size: 20px; font-weight: 900; color: #fff; text-shadow: 2px 2px 4px #000; z-index: 15; pointer-events: none; }
-        .room-code { font-size: 22px; color: #00e5ff; letter-spacing: 2px; background: #222; padding: 8px 15px; border-radius: 8px; margin: 10px 0; border: 1px dashed #00e5ff; }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+        .animate-pulse-glow { animation: pulse-glow 3s infinite ease-in-out; }
     </style>
 </head>
-<body>
+<body class="relative min-h-screen text-white overflow-hidden">
 
-<div id="game-container">
-    <!-- Top Bar -->
-    <div class="header">
-        <div>LVL: <span id="lvl-txt">1</span> | <span id="role-txt" style="color:#2196f3;">MENU</span></div>
-        <div class="gold">💰 <span id="gold-txt">0</span></div>
+    <!-- 3D Render Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Vignette & Scanline Overlay -->
+    <div class="absolute inset-0 scanlines pointer-events-none z-10"></div>
+    <div class="absolute inset-0 pointer-events-none z-10" style="background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.8) 100%);"></div>
+
+    <!-- Top Navigation / Game HUD Header -->
+    <div class="absolute top-0 left-0 w-full p-4 md:p-6 z-20 flex justify-between items-start pointer-events-none">
+        <!-- Player Info & HP Bar -->
+        <div class="glass-panel p-4 rounded-xl flex items-center space-x-4 pointer-events-auto max-w-sm w-full border-l-4 border-pink-500">
+            <div class="relative w-12 h-12 rounded-lg bg-pink-500/20 border border-pink-400 flex items-center justify-center font-bold text-xl text-pink-300">
+                <i class="fa-solid fa-user-ninja"></i>
+                <span class="absolute -bottom-1 -right-1 text-[9px] bg-pink-600 text-white px-1 rounded">LV.99</span>
+            </div>
+            <div class="flex-1">
+                <div class="flex justify-between text-xs font-bold tracking-wider mb-1">
+                    <span class="text-pink-300">VALKYRIE_UNIT_01</span>
+                    <span class="text-gray-400">STATUS: READY</span>
+                </div>
+                <!-- Health Bar -->
+                <div class="w-full bg-gray-900/80 h-2.5 rounded-full overflow-hidden border border-gray-700/50 mb-1.5">
+                    <div id="hp-bar" class="bg-gradient-to-r from-pink-500 to-rose-400 h-full w-[85%] transition-all duration-300 shadow-[0_0_10px_#ec4899]"></div>
+                </div>
+                <!-- Mana Bar -->
+                <div class="w-full bg-gray-900/80 h-1.5 rounded-full overflow-hidden border border-gray-700/50">
+                    <div id="mana-bar" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full w-[60%] transition-all duration-300 shadow-[0_0_8px_#06b6d4]"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls & Audio Switch -->
+        <div class="flex space-x-3 pointer-events-auto">
+            <button id="audio-btn" class="glass-panel p-3 rounded-xl hover:bg-pink-500/20 transition border border-pink-500/30 text-pink-300 flex items-center space-x-2">
+                <i class="fa-solid fa-volume-xmark text-lg" id="audio-icon"></i>
+                <span class="text-xs font-bold tracking-wider hidden md:inline">SYNTH BGM</span>
+            </button>
+            <label class="glass-panel p-3 rounded-xl hover:bg-cyan-500/20 transition border border-cyan-500/30 text-cyan-300 flex items-center space-x-2 cursor-pointer">
+                <i class="fa-solid fa-file-arrow-up text-lg"></i>
+                <span class="text-xs font-bold tracking-wider hidden md:inline">LOAD .GLB</span>
+                <input type="file" id="glb-upload" accept=".glb,.gltf" class="hidden">
+            </label>
+        </div>
     </div>
 
-    <!-- Message Display -->
-    <div id="msg-box"></div>
-
-    <!-- Main Game Canvas -->
-    <canvas id="gameCanvas" width="360" height="480"></canvas>
-
-    <!-- Lane Selection Buttons -->
-    <div class="controls" id="control-panel" style="display: none;">
-        <button class="btn-lane" onclick="chooseLane('A')">A<br><small>KIRI</small></button>
-        <button class="btn-lane" onclick="chooseLane('B')">B<br><small>TENGAH</small></button>
-        <button class="btn-lane" onclick="chooseLane('C')">C<br><small>KANAN</small></button>
-    </div>
-
-    <!-- Start Menu Screen -->
-    <div class="overlay" id="menu-screen">
-        <h1>GALAH BEDEZUP</h1>
-        <p>Bila Mind Game Teka Lorong Jadi Reality!</p>
-        <button class="btn btn-green" onclick="showLobby()">MAIN ONLINE (INVITE)</button>
-        <button class="btn" onclick="startSinglePlayer()">MAIN VS AI</button>
-        <button class="btn btn-blue" onclick="openShop()">KEDAI KOSTUM</button>
-    </div>
-
-    <!-- Online Lobby Screen -->
-    <div class="overlay" id="lobby-screen" style="display: none;">
-        <h1>ONLINE MULTIPLAYER</h1>
-        <p>Main Lawan Kawan Real-Time</p>
-        <button class="btn" onclick="createRoom()">BUAT BILIK BARU</button>
-        <p style="margin: 10px 0 5px 0;">— ATAU —</p>
-        <input type="text" id="join-code-input" placeholder="MASUKKANKOD" maxlength="5">
-        <button class="btn btn-blue" onclick="joinRoom()">MASUK BILIK KAWAN</button>
-        <button class="btn" style="background:#777; box-shadow:none;" onclick="showMenu()">KEMBALI</button>
-    </div>
-
-    <!-- Waiting Room Screen -->
-    <div class="overlay" id="waiting-screen" style="display: none;">
-        <h1>BILIK DIPERSIAPKAN</h1>
-        <p>Hantar kod ini pada kawan anda:</p>
-        <div class="room-code" id="display-room-code">-----</div>
-        <p id="waiting-status">Menunggu kawan masuk...</p>
-        <button class="btn" style="background:#777; box-shadow:none;" onclick="showMenu()">BATAL</button>
-    </div>
-
-    <!-- Shop Screen -->
-    <div class="overlay" id="shop-screen" style="display: none;">
-        <h1>KEDAI KOSTUM</h1>
-        <div id="shop-items" style="width:100%; max-height:350px; overflow-y:auto;"></div>
-        <button class="btn" onclick="closeShop()">KEMBALI</button>
-    </div>
-
-    <!-- Game Over Screen -->
-    <div class="overlay" id="end-screen" style="display: none;">
-        <h1 id="end-title">TAMAT!</h1>
-        <p id="end-desc"></p>
-        <button class="btn" onclick="showMenu()">MENU UTAMA</button>
-    </div>
-</div>
-
-<script>
-    // State Data & LocalStorage
-    let state = {
-        gold: parseInt(localStorage.getItem('gb_gold')) || 0,
-        level: parseInt(localStorage.getItem('gb_level')) || 1,
-        activeCostume: localStorage.getItem('gb_costume') || 'basic',
-        unlockedCostumes: JSON.parse(localStorage.getItem('gb_unlocked')) || ['basic']
-    };
-
-    const costumes = {
-        'basic': { name: 'Budak Kampung', price: 0, color: '#e91e63', hat: 'none' },
-        'bandana': { name: 'Jaguh Taman', price: 100, color: '#ff9800', hat: 'bandana' },
-        'tanjak': { name: 'Raja Galah', price: 300, color: '#4caf50', hat: 'tanjak' },
-        'cyber': { name: 'Galah Cyber', price: 600, color: '#00bcd4', hat: 'cyber' }
-    };
-
-    // Canvas Setup
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-
-    // Game Logic Vars
-    let isOnline = false;
-    let isHost = false; // Host = Defender, Guest = Attacker
-    let peer = null;
-    let conn = null;
-    let currentRole = 'ATTACKER'; // ATTACKER / DEFENDER
-    let currentBox = 1;
-    let timer = 5;
-    let timerInterval = null;
-    let defenderChoice = '';
-    let attackerChoice = '';
-    
-    // Positions
-    const lanes = { 'A': 70, 'B': 180, 'C': 290 };
-    let playerPos = { x: lanes['B'], y: 420 };
-    let defenderPos = { x: lanes['B'], y: 300 };
-
-    function saveData() {
-        localStorage.setItem('gb_gold', state.gold);
-        localStorage.setItem('gb_level', state.level);
-        localStorage.setItem('gb_costume', state.activeCostume);
-        localStorage.setItem('gb_unlocked', JSON.stringify(state.unlockedCostumes));
-        document.getElementById('lvl-txt').innerText = state.level;
-        document.getElementById('gold-txt').innerText = state.gold;
-    }
-
-    function showMsg(txt, col="#ffeb3b") {
-        const b = document.getElementById('msg-box');
-        b.innerText = txt; b.style.color = col;
-        setTimeout(() => { if(b.innerText===txt) b.innerText=''; }, 2000);
-    }
-
-    function showScreen(id) {
-        ['menu-screen','lobby-screen','waiting-screen','shop-screen','end-screen'].forEach(s => {
-            document.getElementById(s).style.display = (s === id) ? 'flex' : 'none';
-        });
-    }
-
-    function showMenu() { showScreen('menu-screen'); document.getElementById('control-panel').style.display = 'none'; }
-    function showLobby() { showScreen('lobby-screen'); }
-
-    // ONLINE MULTIPLAYER (PEERJS)
-    function createRoom() {
-        showScreen('waiting-screen');
-        const roomCode = Math.random().toString(36).substring(2, 7).toUpperCase();
-        document.getElementById('display-room-code').innerText = roomCode;
+    <!-- Bottom Actions & Controls HUD -->
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 pointer-events-auto flex flex-col items-center space-y-4">
         
-        peer = new Peer('GB-' + roomCode);
-        peer.on('open', () => {
-            document.getElementById('waiting-status').innerText = "Kod sedia! Menunggu kawan sambung...";
-        });
+        <!-- Theme Selector Pills -->
+        <div class="glass-panel px-3 py-1.5 rounded-full flex space-x-2 border border-white/10 text-xs">
+            <button onclick="setTheme('sakura')" class="px-3 py-1 rounded-full bg-pink-500/30 hover:bg-pink-500/50 text-pink-200 border border-pink-400/30 transition">Sakura</button>
+            <button onclick="setTheme('cyber')" class="px-3 py-1 rounded-full bg-cyan-500/30 hover:bg-cyan-500/50 text-cyan-200 border border-cyan-400/30 transition">Cyber</button>
+            <button onclick="setTheme('astral')" class="px-3 py-1 rounded-full bg-purple-500/30 hover:bg-purple-500/50 text-purple-200 border border-purple-400/30 transition">Astral</button>
+            <button onclick="setTheme('emperor')" class="px-3 py-1 rounded-full bg-amber-500/30 hover:bg-amber-500/50 text-amber-200 border border-amber-400/30 transition">Emperor</button>
+        </div>
 
-        peer.on('connection', (c) => {
-            conn = c;
-            isOnline = true; isHost = true;
-            currentRole = 'DEFENDER';
-            setupConnection();
-        });
-    }
+        <!-- Action Command Buttons -->
+        <div class="flex items-center space-x-4">
+            <button id="btn-pose" class="glass-panel px-5 py-2.5 rounded-xl border border-pink-500/40 text-pink-300 hover:bg-pink-500/30 font-bold text-xs tracking-wider transition active:scale-95 flex items-center space-x-2">
+                <i class="fa-solid fa-person-running"></i>
+                <span>POSE</span>
+            </button>
+            <button id="btn-burst" class="glass-panel px-7 py-3 rounded-2xl border-2 border-pink-400 bg-gradient-to-r from-pink-500/40 to-purple-600/40 text-white font-extrabold text-sm tracking-widest hover:brightness-125 transition shadow-[0_0_20px_rgba(236,72,153,0.5)] active:scale-95 flex items-center space-x-2">
+                <i class="fa-solid fa-bolt text-yellow-300 animate-bounce"></i>
+                <span>BURST MODE</span>
+            </button>
+            <button id="btn-charge" class="glass-panel px-5 py-2.5 rounded-xl border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 font-bold text-xs tracking-wider transition active:scale-95 flex items-center space-x-2">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>CHARGE</span>
+            </button>
+        </div>
+    </div>
 
-    function joinRoom() {
-        const code = document.getElementById('join-code-input').value.toUpperCase();
-        if(code.length < 5) return alert("Kod bilik tidak sah!");
+    <!-- JavaScript Logic -->
+    <script>
+        // --- Global Variables & Three.js Setup ---
+        let scene, camera, renderer, controls;
+        let characterGroup, wingsGroup, magicCircle, particleSystem;
+        let clock = new THREE.Clock();
+        let currentTheme = 'sakura';
+        let isBurstMode = false;
+        let customModelLoaded = false;
 
-        peer = new Peer();
-        peer.on('open', () => {
-            conn = peer.connect('GB-' + code);
-            isOnline = true; isHost = false;
-            currentRole = 'ATTACKER';
-            setupConnection();
-        });
-    }
+        // Theme Palette Config
+        const themes = {
+            sakura: { primary: 0xec4899, secondary: 0xf43f5e, bg: 0x0c0510, fog: 0x180a20, grid: 0xff66cc },
+            cyber:  { primary: 0x06b6d4, secondary: 0x3b82f6, bg: 0x030d1a, fog: 0x051a2e, grid: 0x00f0ff },
+            astral: { primary: 0x8b5cf6, secondary: 0xa855f7, bg: 0x0a0518, fog: 0x12082b, grid: 0xb066ff },
+            emperor:{ primary: 0xf59e0b, secondary: 0xef4444, bg: 0x140d02, fog: 0x241703, grid: 0xffaa00 }
+        };
 
-    function setupConnection() {
-        conn.on('open', () => {
-            document.getElementById('role-txt').innerText = isHost ? "PENJAGA" : "PENYERANG";
-            startOnlineGame();
-        });
+        function init() {
+            const container = document.getElementById('canvas-container');
 
-        conn.on('data', (data) => {
-            handleNetworkData(data);
-        });
-    }
+            // 1. Scene & Fog Setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(themes.sakura.bg);
+            scene.fog = new THREE.FogExp2(themes.sakura.fog, 0.035);
 
-    function sendData(type, payload) {
-        if(conn && conn.open) conn.send({ type, payload });
-    }
+            // 2. Camera Setup
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 2.5, 7.5);
 
-    function handleNetworkData(data) {
-        if(data.type === 'DEFENDER_LOCK') {
-            defenderChoice = data.payload;
-            if(currentRole === 'ATTACKER') showMsg("PENJAGA DAH KUNCI LORONG!", "#00e5ff");
-        } else if(data.type === 'ATTACKER_MOVE') {
-            attackerChoice = data.payload;
-            resolveRound();
-        } else if(data.type === 'NEXT_ROUND') {
-            currentBox = data.payload.box;
-            startRound();
+            // 3. Renderer Setup
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            container.appendChild(renderer.domElement);
+
+            // 4. Orbit Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 + 0.05; // Prevent camera under floor
+            controls.minDistance = 2;
+            controls.maxDistance = 15;
+            controls.target.set(0, 1.8, 0);
+
+            // 5. Lighting Setup
+            setupLighting();
+
+            // 6. Environment & Floor
+            setupEnvironment();
+
+            // 7. Build Anime Character (Procedural)
+            createProceduralAnimeCharacter();
+
+            // 8. Particles System (Mana Sparks / Sakura)
+            createParticleSystem();
+
+            // Event Listeners
+            window.addEventListener('resize', onWindowResize);
+            setupUIControls();
+
+            // Start Animation Loop
+            animate();
         }
-    }
 
-    // GAME ENGINE & FLOW
-    function startSinglePlayer() {
-        isOnline = false;
-        currentRole = 'ATTACKER';
-        document.getElementById('role-txt').innerText = "VS AI";
-        showScreen('');
-        document.getElementById('control-panel').style.display = 'flex';
-        currentBox = 1;
-        startRound();
-    }
+        // --- Lighting ---
+        let mainLight, rimLight, floorLight;
+        function setupLighting() {
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
 
-    function startOnlineGame() {
-        showScreen('');
-        document.getElementById('control-panel').style.display = 'flex';
-        currentBox = 1;
-        startRound();
-    }
+            mainLight = new THREE.DirectionalLight(0xffd5e5, 1.5);
+            mainLight.position.set(5, 8, 5);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048;
+            mainLight.shadow.mapSize.height = 2048;
+            scene.add(mainLight);
 
-    function startRound() {
-        defenderChoice = ''; attackerChoice = '';
-        playerPos = { x: lanes['B'], y: 420 };
-        defenderPos.x = lanes['B'];
-        defenderPos.y = 440 - (currentBox * 110);
+            rimLight = new THREE.DirectionalLight(themes.sakura.primary, 3.0);
+            rimLight.position.set(-5, 5, -5);
+            scene.add(rimLight);
 
-        if(!isOnline && currentRole === 'ATTACKER') {
-            const keys = ['A','B','C'];
-            defenderChoice = keys[Math.floor(Math.random() * keys.length)];
+            floorLight = new THREE.PointLight(themes.sakura.primary, 2, 10);
+            floorLight.position.set(0, 0.2, 0);
+            scene.add(floorLight);
         }
 
-        showMsg("BEDEZUP SEKARANG!", "#aed581");
-        draw();
-    }
+        // --- Environment & Cyber Grid ---
+        let gridHelper;
+        function setupEnvironment() {
+            // Floor Mesh
+            const floorGeo = new THREE.PlaneGeometry(60, 60);
+            const floorMat = new THREE.MeshStandardMaterial({
+                color: 0x05050a,
+                roughness: 0.2,
+                metalness: 0.8
+            });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
 
-    function chooseLane(lane) {
-        if(currentRole === 'DEFENDER') {
-            defenderChoice = lane;
-            showMsg(`KUNCI LORONG ${lane}!`, "#ff9800");
-            if(isOnline) sendData('DEFENDER_LOCK', lane);
-        } else {
-            attackerChoice = lane;
-            if(isOnline) {
-                if(!defenderChoice) return showMsg("TUNGGU PENJAGA KUNCI!", "#ff5252");
-                sendData('ATTACKER_MOVE', lane);
-                resolveRound();
-            } else {
-                resolveRound();
+            // Cyber Grid
+            gridHelper = new THREE.GridHelper(60, 60, themes.sakura.grid, 0x222233);
+            gridHelper.position.y = 0.01;
+            scene.add(gridHelper);
+
+            // Magic Circle (Rune Ground)
+            createMagicCircle();
+        }
+
+        // --- Magic Circle ---
+        function createMagicCircle() {
+            magicCircle = new THREE.Group();
+            
+            const ringGeo1 = new THREE.RingGeometry(1.8, 2.0, 32);
+            const ringGeo2 = new THREE.RingGeometry(2.2, 2.3, 32);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: themes.sakura.primary,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.7
+            });
+
+            const ring1 = new THREE.Mesh(ringGeo1, ringMat);
+            const ring2 = new THREE.Mesh(ringGeo2, ringMat);
+            ring1.rotation.x = -Math.PI / 2;
+            ring2.rotation.x = -Math.PI / 2;
+
+            magicCircle.add(ring1);
+            magicCircle.add(ring2);
+
+            // Add inner geometric star (Octagram)
+            const starGeo = new THREE.BufferGeometry();
+            const vertices = [];
+            for(let i = 0; i <= 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const r = (i % 2 === 0) ? 1.8 : 0.8;
+                vertices.push(Math.cos(angle) * r, 0, Math.sin(angle) * r);
+            }
+            starGeo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            const starMat = new THREE.LineBasicMaterial({ color: themes.sakura.primary, transparent: true, opacity: 0.8 });
+            const star = new THREE.Line(starGeo, starMat);
+            magicCircle.add(star);
+
+            magicCircle.position.y = 0.02;
+            scene.add(magicCircle);
+        }
+
+        // --- Toon Material Helper ---
+        function createToonMaterial(colorHex, outline = true) {
+            // Create a 3-step toon gradient map texture
+            const canvas = document.createElement('canvas');
+            canvas.width = 4;
+            canvas.height = 1;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#444444'; ctx.fillRect(0, 0, 1, 1);
+            ctx.fillStyle = '#888888'; ctx.fillRect(1, 0, 1, 1);
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(2, 0, 2, 1);
+
+            const gradientMap = new THREE.CanvasTexture(canvas);
+            gradientMap.minFilter = THREE.NearestFilter;
+            gradientMap.magFilter = THREE.NearestFilter;
+
+            return new THREE.MeshToonMaterial({
+                color: colorHex,
+                gradientMap: gradientMap
+            });
+        }
+
+        // --- Build Procedural Anime Character ---
+        function createProceduralAnimeCharacter() {
+            characterGroup = new THREE.Group();
+
+            const skinMat = createToonMaterial(0xffdfd3);
+            const hairMat = createToonMaterial(themes.sakura.primary);
+            const armorMat = createToonMaterial(0x1e1e2f);
+            const goldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.9 });
+            const glowMat = new THREE.MeshBasicMaterial({ color: themes.sakura.primary });
+
+            // 1. Head
+            const headGeo = new THREE.ConeGeometry(0.35, 0.6, 6);
+            headGeo.rotateX(Math.PI);
+            const head = new THREE.Mesh(headGeo, skinMat);
+            head.position.y = 2.4;
+            head.scale.set(1, 1.2, 0.9);
+            characterGroup.add(head);
+
+            // Hair (Anime Spikes / Twintails)
+            const hairGroup = new THREE.Group();
+            for(let i = 0; i < 9; i++) {
+                const spikeGeo = new THREE.ConeGeometry(0.08, 0.5, 4);
+                const spike = new THREE.Mesh(spikeGeo, hairMat);
+                spike.position.set((Math.random()-0.5)*0.5, 2.5 + Math.random()*0.2, (Math.random()-0.5)*0.4 - 0.1);
+                spike.rotation.set((Math.random()-0.5)*0.5, 0, (Math.random()-0.5)*0.8);
+                hairGroup.add(spike);
+            }
+            characterGroup.add(hairGroup);
+
+            // Glowing Anime Eyes Visor
+            const visorGeo = new THREE.BoxGeometry(0.32, 0.08, 0.2);
+            const visor = new THREE.Mesh(visorGeo, glowMat);
+            visor.position.set(0, 2.42, 0.18);
+            characterGroup.add(visor);
+
+            // 2. Torso Armor
+            const torsoGeo = new THREE.CylinderGeometry(0.28, 0.18, 0.7, 6);
+            const torso = new THREE.Mesh(torsoGeo, armorMat);
+            torso.position.y = 1.8;
+            characterGroup.add(torso);
+
+            // Chestplate Accent
+            const chestGeo = new THREE.BoxGeometry(0.24, 0.2, 0.1);
+            const chest = new THREE.Mesh(chestGeo, goldMat);
+            chest.position.set(0, 1.9, 0.12);
+            characterGroup.add(chest);
+
+            // 3. Limbs (Arms & Legs)
+            // Shoulders (Pauldrons)
+            const shoulderGeo = new THREE.SphereGeometry(0.14, 8, 8);
+            const shoulderL = new THREE.Mesh(shoulderGeo, armorMat);
+            const shoulderR = new THREE.Mesh(shoulderGeo, armorMat);
+            shoulderL.position.set(0.38, 2.0, 0);
+            shoulderR.position.set(-0.38, 2.0, 0);
+            characterGroup.add(shoulderL); characterGroup.add(shoulderR);
+
+            // Legs
+            const legGeo = new THREE.CylinderGeometry(0.09, 0.06, 1.1, 8);
+            const legL = new THREE.Mesh(legGeo, armorMat);
+            const legR = new THREE.Mesh(legGeo, armorMat);
+            legL.position.set(0.15, 0.85, 0);
+            legR.position.set(-0.15, 0.85, 0);
+            characterGroup.add(legL); characterGroup.add(legR);
+
+            // 4. Weapons (Katana)
+            const katanaGroup = new THREE.Group();
+            const bladeGeo = new THREE.BoxGeometry(0.03, 1.2, 0.01);
+            const blade = new THREE.Mesh(bladeGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.9, roughness: 0.1 }));
+            blade.position.y = 0.6;
+            katanaGroup.add(blade);
+            katanaGroup.position.set(0.45, 1.2, 0.2);
+            katanaGroup.rotation.set(0.4, 0, -0.3);
+            characterGroup.add(katanaGroup);
+
+            // 5. Anime Energy Wings
+            createEnergyWings();
+            characterGroup.add(wingsGroup);
+
+            // Enable Shadows
+            characterGroup.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            characterGroup.position.y = 0.3; // Floating stance
+            scene.add(characterGroup);
+        }
+
+        // --- Energy Wings ---
+        function createEnergyWings() {
+            wingsGroup = new THREE.Group();
+            wingsGroup.position.set(0, 1.9, -0.2);
+
+            const wingMat = new THREE.MeshBasicMaterial({
+                color: themes.sakura.primary,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide
+            });
+
+            for(let side = -1; side <= 1; side += 2) {
+                if(side === 0) continue;
+                const wingShape = new THREE.Shape();
+                wingShape.moveTo(0, 0);
+                wingShape.quadraticCurveTo(0.8 * side, 0.8, 1.8 * side, 0.4);
+                wingShape.quadraticCurveTo(1.2 * side, -0.2, 0, -0.5);
+
+                const wingGeo = new THREE.ShapeGeometry(wingShape);
+                const wing = new THREE.Mesh(wingGeo, wingMat);
+                wing.scale.set(0.9, 0.9, 0.9);
+                wingsGroup.add(wing);
             }
         }
-    }
 
-    function resolveRound() {
-        const targetX = lanes[attackerChoice];
-        const targetY = 440 - (currentBox * 110);
-        defenderPos.x = lanes[defenderChoice];
+        // --- Particle System (Sakura/Mana) ---
+        function createParticleSystem() {
+            const particleCount = 200;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const scales = new Float32Array(particleCount);
 
-        // Animate Dash
-        let f = 0;
-        const anim = setInterval(() => {
-            f++;
-            playerPos.x += (targetX - playerPos.x) * 0.3;
-            playerPos.y += (targetY - playerPos.y) * 0.3;
-            draw();
+            for (let i = 0; i < particleCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 20;
+                positions[i + 1] = Math.random() * 10;
+                positions[i + 2] = (Math.random() - 0.5) * 20;
+                scales[i / 3] = Math.random() * 0.08 + 0.02;
+            }
 
-            if(f > 10) {
-                clearInterval(anim);
-                playerPos.x = targetX; playerPos.y = targetY;
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const pMat = new THREE.PointsMaterial({
+                color: themes.sakura.primary,
+                size: 0.15,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending
+            });
 
-                if(attackerChoice === defenderChoice) {
-                    // KANTOI
-                    showMsg("KANTOIII!! 💥", "#ff5252");
-                    drawSlap();
-                    setTimeout(() => endGame(false), 1200);
+            particleSystem = new THREE.Points(geometry, pMat);
+            scene.add(particleSystem);
+        }
+
+        // --- Theme Switcher ---
+        window.setTheme = function(themeName) {
+            currentTheme = themeName;
+            const t = themes[themeName];
+
+            scene.background.setHex(t.bg);
+            scene.fog.color.setHex(t.fog);
+            rimLight.color.setHex(t.primary);
+            floorLight.color.setHex(t.primary);
+            gridHelper.material.color.setHex(t.grid);
+
+            if(particleSystem) particleSystem.material.color.setHex(t.primary);
+            if(magicCircle) {
+                magicCircle.children.forEach(c => {
+                    if(c.material) c.material.color.setHex(t.primary);
+                });
+            }
+        };
+
+        // --- UI Interactions & GLB Loader ---
+        function setupUIControls() {
+            // Audio Synth Toggle (Tone.js)
+            let isPlaying = false;
+            let synth, loop;
+            document.getElementById('audio-btn').addEventListener('click', async () => {
+                const icon = document.getElementById('audio-icon');
+                if (!isPlaying) {
+                    await Tone.start();
+                    synth = new THREE.Tone ? null : new Tone.PolySynth(Tone.Synth).toDestination();
+                    synth.volume.value = -12;
+                    
+                    // Simple Cyber Ambient Loop
+                    const notes = ["C3", "E3", "G3", "B3", "C4"];
+                    let step = 0;
+                    Tone.Transport.scheduleRepeat((time) => {
+                        let note = notes[step % notes.length];
+                        synth.triggerAttackRelease(note, "8n", time);
+                        step++;
+                    }, "4n");
+
+                    Tone.Transport.start();
+                    icon.className = "fa-solid fa-volume-high text-pink-400 animate-pulse";
+                    isPlaying = true;
                 } else {
-                    // LEPAS
-                    showMsg("LEPAS! 💨", "#69f0ae");
-                    currentBox++;
-                    if(currentBox > 3) {
-                        setTimeout(() => endGame(true), 800);
-                    } else {
-                        setTimeout(() => {
-                            if(isHost) sendData('NEXT_ROUND', { box: currentBox });
-                            startRound();
-                        }, 1000);
-                    }
+                    Tone.Transport.stop();
+                    icon.className = "fa-solid fa-volume-xmark text-lg";
+                    isPlaying = false;
+                }
+            });
+
+            // Action Buttons
+            document.getElementById('btn-pose').addEventListener('click', () => {
+                if(characterGroup) {
+                    characterGroup.rotation.y += Math.PI / 4;
+                }
+            });
+
+            document.getElementById('btn-charge').addEventListener('click', () => {
+                const manaBar = document.getElementById('mana-bar');
+                manaBar.style.width = '100%';
+                setTimeout(() => { manaBar.style.width = '40%'; }, 2000);
+            });
+
+            document.getElementById('btn-burst').addEventListener('click', () => {
+                isBurstMode = !isBurstMode;
+                const btn = document.getElementById('btn-burst');
+                if(isBurstMode) {
+                    btn.classList.add('scale-110', 'brightness-150');
+                    renderer.toneMappingExposure = 2.0;
+                } else {
+                    btn.classList.remove('scale-110', 'brightness-150');
+                    renderer.toneMappingExposure = 1.2;
+                }
+            });
+
+            // GLB File Loader (User Custom Model)
+            document.getElementById('glb-upload').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const url = URL.createObjectURL(file);
+                const loader = new THREE.GLTFLoader();
+
+                loader.load(url, (gltf) => {
+                    if (characterGroup) scene.remove(characterGroup);
+                    characterGroup = gltf.scene;
+
+                    // Auto Adjust Scale & Shadows
+                    const box = new THREE.Box3().setFromObject(characterGroup);
+                    const size = box.getSize(new THREE.Vector3());
+                    const scaleFactor = 3.0 / size.y;
+                    characterGroup.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+                    characterGroup.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+
+                    scene.add(characterGroup);
+                    customModelLoaded = true;
+                });
+            });
+        }
+
+        // --- Window Resize ---
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            const elapsedTime = clock.getElapsedTime();
+
+            // 1. Idle Floating Animation for Character
+            if (characterGroup && !customModelLoaded) {
+                characterGroup.position.y = 0.3 + Math.sin(elapsedTime * 2) * 0.08;
+            }
+
+            // 2. Wing Flap Animation
+            if (wingsGroup) {
+                wingsGroup.children.forEach((wing, index) => {
+                    const side = index === 0 ? 1 : -1;
+                    wing.rotation.y = Math.sin(elapsedTime * 3) * 0.2 * side;
+                });
+            }
+
+            // 3. Magic Circle Rotation
+            if (magicCircle) {
+                magicCircle.rotation.y += 0.005;
+            }
+
+            // 4. Particle Floating Animation
+            if (particleSystem) {
+                const positions = particleSystem.geometry.attributes.position.array;
+                for (let i = 1; i < positions.length; i += 3) {
+                    positions[i] -= 0.015;
+                    if (positions[i] < 0) positions[i] = 10;
+                }
+                particleSystem.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // 5. Burst Mode Camera Shake & Lights
+            if (isBurstMode) {
+                camera.position.x += (Math.random() - 0.5) * 0.02;
+                floorLight.intensity = 4 + Math.sin(elapsedTime * 10) * 2;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize App on Load
+        window.onload = init;
+    </script>
+</body>
+</html>
