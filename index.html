@@ -2,38 +2,44 @@
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galah Bedezup 2D</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Galah Bedezup Online</title>
+    <!-- PeerJS untuk Serverless Real-time Online Multiplayer Gratis -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background: #1a1a1a; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
-        #game-container { position: relative; width: 360px; height: 640px; background: #2e7d32; border: 4px solid #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; display: flex; flex-direction: column; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background: #121212; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
         
-        /* Header UI */
-        .header { background: rgba(0,0,0,0.6); padding: 10px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-        .stats { font-size: 14px; font-weight: bold; }
+        #game-container { position: relative; width: 360px; height: 640px; background: #2e7d32; border: 4px solid #fff; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.8); overflow: hidden; display: flex; flex-direction: column; }
+        
+        /* Top Header UI */
+        .header { background: rgba(0,0,0,0.7); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; z-index: 10; font-size: 13px; font-weight: bold; }
         .gold { color: #ffd700; }
         
-        /* Canvas Area */
-        canvas { background: #4caf50; flex: 1; display: block; }
+        /* Game Canvas */
+        canvas { background: #388e3c; flex: 1; display: block; }
 
-        /* UI Overlays */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20; text-align: center; padding: 20px; }
-        h1 { color: #ffeb3b; font-size: 28px; margin-bottom: 10px; text-shadow: 2px 2px #d32f2f; }
-        p { margin-bottom: 15px; font-size: 14px; color: #ddd; }
+        /* Overlays & Screens */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20; text-align: center; padding: 20px; }
+        h1 { color: #ffeb3b; font-size: 26px; margin-bottom: 8px; text-shadow: 2px 2px #d32f2f; }
+        p { margin-bottom: 15px; font-size: 13px; color: #ccc; }
         
-        /* Buttons */
-        .btn { background: #ff9800; color: #fff; border: none; padding: 12px 24px; font-size: 16px; font-weight: bold; border-radius: 25px; cursor: pointer; margin: 5px; box-shadow: 0 4px #e65100; transition: 0.1s; }
-        .btn:active { transform: translateY(3px); box-shadow: 0 1px #e65100; }
+        /* Buttons & Inputs */
+        .btn { background: #ff9800; color: #fff; border: none; padding: 12px 20px; font-size: 15px; font-weight: bold; border-radius: 25px; cursor: pointer; margin: 5px; width: 80%; box-shadow: 0 4px #e65100; transition: 0.1s; }
+        .btn:active { transform: translateY(2px); box-shadow: 0 1px #e65100; }
         .btn-blue { background: #2196f3; box-shadow: 0 4px #0d47a1; }
+        .btn-green { background: #4caf50; box-shadow: 0 4px #1b5e20; }
         
-        /* Controls Overlay */
+        input[type="text"] { width: 80%; padding: 10px; border-radius: 8px; border: 2px solid #ff9800; text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+
+        /* Controls Panel */
         .controls { position: absolute; bottom: 15px; left: 0; width: 100%; display: flex; justify-content: space-evenly; padding: 0 10px; z-index: 10; }
-        .btn-lane { width: 90px; height: 60px; background: #ff5722; border: 2px solid #fff; border-radius: 10px; color: #fff; font-size: 18px; font-weight: bold; box-shadow: 0 4px #bf360c; cursor: pointer; }
+        .btn-lane { width: 90px; height: 60px; background: #ff5722; border: 2px solid #fff; border-radius: 12px; color: #fff; font-size: 16px; font-weight: bold; box-shadow: 0 4px #bf360c; cursor: pointer; }
         .btn-lane:active { transform: translateY(2px); box-shadow: 0 1px #bf360c; }
 
         /* Status Toast */
-        #msg-box { position: absolute; top: 70px; width: 100%; text-align: center; font-size: 22px; font-weight: 900; color: #fff; text-shadow: 2px 2px 4px #000; z-index: 15; pointer-events: none; }
+        #msg-box { position: absolute; top: 60px; width: 100%; text-align: center; font-size: 20px; font-weight: 900; color: #fff; text-shadow: 2px 2px 4px #000; z-index: 15; pointer-events: none; }
+        .room-code { font-size: 22px; color: #00e5ff; letter-spacing: 2px; background: #222; padding: 8px 15px; border-radius: 8px; margin: 10px 0; border: 1px dashed #00e5ff; }
     </style>
 </head>
 <body>
@@ -41,8 +47,8 @@
 <div id="game-container">
     <!-- Top Bar -->
     <div class="header">
-        <div class="stats">LVL: <span id="lvl-txt">1</span> | XP: <span id="xp-txt">0</span></div>
-        <div class="stats gold">💰 <span id="gold-txt">0</span></div>
+        <div>LVL: <span id="lvl-txt">1</span> | <span id="role-txt" style="color:#2196f3;">MENU</span></div>
+        <div class="gold">💰 <span id="gold-txt">0</span></div>
     </div>
 
     <!-- Message Display -->
@@ -61,17 +67,36 @@
     <!-- Start Menu Screen -->
     <div class="overlay" id="menu-screen">
         <h1>GALAH BEDEZUP</h1>
-        <p>Teka Lorong & Bedezup Lari Tanpa Kena Tepuk!</p>
-        <button class="btn" onclick="startGame()">MULA MAIN</button>
+        <p>Bila Mind Game Teka Lorong Jadi Reality!</p>
+        <button class="btn btn-green" onclick="showLobby()">MAIN ONLINE (INVITE)</button>
+        <button class="btn" onclick="startSinglePlayer()">MAIN VS AI</button>
         <button class="btn btn-blue" onclick="openShop()">KEDAI KOSTUM</button>
+    </div>
+
+    <!-- Online Lobby Screen -->
+    <div class="overlay" id="lobby-screen" style="display: none;">
+        <h1>ONLINE MULTIPLAYER</h1>
+        <p>Main Lawan Kawan Real-Time</p>
+        <button class="btn" onclick="createRoom()">BUAT BILIK BARU</button>
+        <p style="margin: 10px 0 5px 0;">— ATAU —</p>
+        <input type="text" id="join-code-input" placeholder="MASUKKANKOD" maxlength="5">
+        <button class="btn btn-blue" onclick="joinRoom()">MASUK BILIK KAWAN</button>
+        <button class="btn" style="background:#777; box-shadow:none;" onclick="showMenu()">KEMBALI</button>
+    </div>
+
+    <!-- Waiting Room Screen -->
+    <div class="overlay" id="waiting-screen" style="display: none;">
+        <h1>BILIK DIPERSIAPKAN</h1>
+        <p>Hantar kod ini pada kawan anda:</p>
+        <div class="room-code" id="display-room-code">-----</div>
+        <p id="waiting-status">Menunggu kawan masuk...</p>
+        <button class="btn" style="background:#777; box-shadow:none;" onclick="showMenu()">BATAL</button>
     </div>
 
     <!-- Shop Screen -->
     <div class="overlay" id="shop-screen" style="display: none;">
         <h1>KEDAI KOSTUM</h1>
-        <p id="shop-info">Pilih Gaya Bedezup Anda</p>
-        <div id="shop-items"></div>
-        <br>
+        <div id="shop-items" style="width:100%; max-height:350px; overflow-y:auto;"></div>
         <button class="btn" onclick="closeShop()">KEMBALI</button>
     </div>
 
@@ -79,337 +104,212 @@
     <div class="overlay" id="end-screen" style="display: none;">
         <h1 id="end-title">TAMAT!</h1>
         <p id="end-desc"></p>
-        <button class="btn" onclick="startGame()">MAIN LAGI</button>
+        <button class="btn" onclick="showMenu()">MENU UTAMA</button>
     </div>
 </div>
 
 <script>
-    // Game State Data & LocalStorage
+    // State Data & LocalStorage
     let state = {
         gold: parseInt(localStorage.getItem('gb_gold')) || 0,
-        xp: parseInt(localStorage.getItem('gb_xp')) || 0,
         level: parseInt(localStorage.getItem('gb_level')) || 1,
         activeCostume: localStorage.getItem('gb_costume') || 'basic',
         unlockedCostumes: JSON.parse(localStorage.getItem('gb_unlocked')) || ['basic']
     };
 
     const costumes = {
-        'basic': { name: 'Budak Kampung', price: 0, color: '#e91e63', hat: 'none', reqLvl: 1 },
-        'bandana': { name: 'Jaguh Taman', price: 100, color: '#ff9800', hat: 'bandana', reqLvl: 3 },
-        'tanjak': { name: 'Raja Galah', price: 300, color: '#4caf50', hat: 'tanjak', reqLvl: 5 },
-        'cyber': { name: 'Galah Cyber', price: 600, color: '#00bcd4', hat: 'cyber', reqLvl: 10 }
+        'basic': { name: 'Budak Kampung', price: 0, color: '#e91e63', hat: 'none' },
+        'bandana': { name: 'Jaguh Taman', price: 100, color: '#ff9800', hat: 'bandana' },
+        'tanjak': { name: 'Raja Galah', price: 300, color: '#4caf50', hat: 'tanjak' },
+        'cyber': { name: 'Galah Cyber', price: 600, color: '#00bcd4', hat: 'cyber' }
     };
 
     // Canvas Setup
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Game Variables
-    let currentBox = 1; // 1 to 3 boxes
-    const totalBoxes = 3;
+    // Game Logic Vars
+    let isOnline = false;
+    let isHost = false; // Host = Defender, Guest = Attacker
+    let peer = null;
+    let conn = null;
+    let currentRole = 'ATTACKER'; // ATTACKER / DEFENDER
+    let currentBox = 1;
     let timer = 5;
     let timerInterval = null;
-    let defenderLock = '';
-    let isAnimating = false;
-
-    // Entity Positions
-    let playerPos = { x: 180, y: 420, lane: 'B' };
-    let defenderPos = { x: 180, y: 300, lane: 'B' };
-
+    let defenderChoice = '';
+    let attackerChoice = '';
+    
+    // Positions
     const lanes = { 'A': 70, 'B': 180, 'C': 290 };
+    let playerPos = { x: lanes['B'], y: 420 };
+    let defenderPos = { x: lanes['B'], y: 300 };
 
     function saveData() {
         localStorage.setItem('gb_gold', state.gold);
-        localStorage.setItem('gb_xp', state.xp);
         localStorage.setItem('gb_level', state.level);
         localStorage.setItem('gb_costume', state.activeCostume);
         localStorage.setItem('gb_unlocked', JSON.stringify(state.unlockedCostumes));
-        updateUI();
-    }
-
-    function updateUI() {
         document.getElementById('lvl-txt').innerText = state.level;
-        document.getElementById('xp-txt').innerText = state.xp;
         document.getElementById('gold-txt').innerText = state.gold;
     }
 
-    function showMsg(text, color = "#ffeb3b") {
-        const box = document.getElementById('msg-box');
-        box.innerText = text;
-        box.style.color = color;
-        setTimeout(() => { if(box.innerText === text) box.innerText = ''; }, 2000);
+    function showMsg(txt, col="#ffeb3b") {
+        const b = document.getElementById('msg-box');
+        b.innerText = txt; b.style.color = col;
+        setTimeout(() => { if(b.innerText===txt) b.innerText=''; }, 2000);
     }
 
-    function startGame() {
-        document.getElementById('menu-screen').style.display = 'none';
-        document.getElementById('end-screen').style.display = 'none';
+    function showScreen(id) {
+        ['menu-screen','lobby-screen','waiting-screen','shop-screen','end-screen'].forEach(s => {
+            document.getElementById(s).style.display = (s === id) ? 'flex' : 'none';
+        });
+    }
+
+    function showMenu() { showScreen('menu-screen'); document.getElementById('control-panel').style.display = 'none'; }
+    function showLobby() { showScreen('lobby-screen'); }
+
+    // ONLINE MULTIPLAYER (PEERJS)
+    function createRoom() {
+        showScreen('waiting-screen');
+        const roomCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+        document.getElementById('display-room-code').innerText = roomCode;
+        
+        peer = new Peer('GB-' + roomCode);
+        peer.on('open', () => {
+            document.getElementById('waiting-status').innerText = "Kod sedia! Menunggu kawan sambung...";
+        });
+
+        peer.on('connection', (c) => {
+            conn = c;
+            isOnline = true; isHost = true;
+            currentRole = 'DEFENDER';
+            setupConnection();
+        });
+    }
+
+    function joinRoom() {
+        const code = document.getElementById('join-code-input').value.toUpperCase();
+        if(code.length < 5) return alert("Kod bilik tidak sah!");
+
+        peer = new Peer();
+        peer.on('open', () => {
+            conn = peer.connect('GB-' + code);
+            isOnline = true; isHost = false;
+            currentRole = 'ATTACKER';
+            setupConnection();
+        });
+    }
+
+    function setupConnection() {
+        conn.on('open', () => {
+            document.getElementById('role-txt').innerText = isHost ? "PENJAGA" : "PENYERANG";
+            startOnlineGame();
+        });
+
+        conn.on('data', (data) => {
+            handleNetworkData(data);
+        });
+    }
+
+    function sendData(type, payload) {
+        if(conn && conn.open) conn.send({ type, payload });
+    }
+
+    function handleNetworkData(data) {
+        if(data.type === 'DEFENDER_LOCK') {
+            defenderChoice = data.payload;
+            if(currentRole === 'ATTACKER') showMsg("PENJAGA DAH KUNCI LORONG!", "#00e5ff");
+        } else if(data.type === 'ATTACKER_MOVE') {
+            attackerChoice = data.payload;
+            resolveRound();
+        } else if(data.type === 'NEXT_ROUND') {
+            currentBox = data.payload.box;
+            startRound();
+        }
+    }
+
+    // GAME ENGINE & FLOW
+    function startSinglePlayer() {
+        isOnline = false;
+        currentRole = 'ATTACKER';
+        document.getElementById('role-txt').innerText = "VS AI";
+        showScreen('');
         document.getElementById('control-panel').style.display = 'flex';
-        
         currentBox = 1;
-        playerPos = { x: lanes['B'], y: 420, lane: 'B' };
-        defenderPos = { x: lanes['B'], y: 300, lane: 'B' };
-        
+        startRound();
+    }
+
+    function startOnlineGame() {
+        showScreen('');
+        document.getElementById('control-panel').style.display = 'flex';
+        currentBox = 1;
         startRound();
     }
 
     function startRound() {
-        isAnimating = false;
-        timer = 5;
-        // AI Defender locks a secret lane
-        const keys = ['A', 'B', 'C'];
-        defenderLock = keys[Math.floor(Math.random() * keys.length)];
-        
-        // Target Defender to locked lane visual area
-        defenderPos.x = lanes[defenderLock];
+        defenderChoice = ''; attackerChoice = '';
+        playerPos = { x: lanes['B'], y: 420 };
+        defenderPos.x = lanes['B'];
         defenderPos.y = 440 - (currentBox * 110);
 
+        if(!isOnline && currentRole === 'ATTACKER') {
+            const keys = ['A','B','C'];
+            defenderChoice = keys[Math.floor(Math.random() * keys.length)];
+        }
+
         showMsg("BEDEZUP SEKARANG!", "#aed581");
-
-        clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            timer--;
-            if (timer <= 0) {
-                clearInterval(timerInterval);
-                chooseLane('B'); // Default move if timeout
-            }
-        }, 1000);
-
         draw();
     }
 
     function chooseLane(lane) {
-        if (isAnimating) return;
-        clearInterval(timerInterval);
-        isAnimating = true;
+        if(currentRole === 'DEFENDER') {
+            defenderChoice = lane;
+            showMsg(`KUNCI LORONG ${lane}!`, "#ff9800");
+            if(isOnline) sendData('DEFENDER_LOCK', lane);
+        } else {
+            attackerChoice = lane;
+            if(isOnline) {
+                if(!defenderChoice) return showMsg("TUNGGU PENJAGA KUNCI!", "#ff5252");
+                sendData('ATTACKER_MOVE', lane);
+                resolveRound();
+            } else {
+                resolveRound();
+            }
+        }
+    }
 
-        playerPos.lane = lane;
-        const targetX = lanes[lane];
+    function resolveRound() {
+        const targetX = lanes[attackerChoice];
         const targetY = 440 - (currentBox * 110);
+        defenderPos.x = lanes[defenderChoice];
 
-        // Simple Animation Step
-        let frames = 0;
+        // Animate Dash
+        let f = 0;
         const anim = setInterval(() => {
-            frames++;
+            f++;
             playerPos.x += (targetX - playerPos.x) * 0.3;
             playerPos.y += (targetY - playerPos.y) * 0.3;
             draw();
 
-            if (frames > 12) {
+            if(f > 10) {
                 clearInterval(anim);
-                playerPos.x = targetX;
-                playerPos.y = targetY;
-                checkResult(lane);
-            }
-        }, 30);
-    }
+                playerPos.x = targetX; playerPos.y = targetY;
 
-    function checkResult(playerLane) {
-        if (playerLane === defenderLock) {
-            // KANTOI!
-            showMsg("KANTOII!! 💥", "#ff5252");
-            drawSlapEffect();
-            setTimeout(() => {
-                endGame(false);
-            }, 1200);
-        } else {
-            // LEPAS!
-            showMsg("LEPAS! 💨", "#69f0ae");
-            currentBox++;
-            if (currentBox > totalBoxes) {
-                setTimeout(() => { endGame(true); }, 800);
-            } else {
-                setTimeout(() => { startRound(); }, 1000);
-            }
-        }
-    }
-
-    function endGame(won) {
-        document.getElementById('control-panel').style.display = 'none';
-        document.getElementById('end-screen').style.display = 'flex';
-        
-        if (won) {
-            document.getElementById('end-title').innerText = "MENANG BEDEZUP! 🎉";
-            document.getElementById('end-desc').innerText = "Awak berjaya meloloskan diri dari Penjaga!";
-            state.gold += 50;
-            state.xp += 30;
-        } else {
-            document.getElementById('end-title').innerText = "KENA TEPUK! 💥";
-            document.getElementById('end-desc').innerText = "Penjaga dah baca fikiran awak!";
-            state.gold += 10;
-            state.xp += 5;
-        }
-
-        // Level Up Logic
-        if (state.xp >= state.level * 50) {
-            state.level++;
-            showMsg("LEVEL UP! 🚀", "#ffd700");
-        }
-
-        saveData();
-    }
-
-    // DRAWING GRAPHICS
-    function draw() {
-        // Clear Field
-        ctx.fillStyle = '#4caf50';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Draw Galah Lines
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 4;
-        
-        // Horizontal Box Lines
-        for(let i = 1; i <= 4; i++) {
-            let y = 440 - (i-1)*110;
-            ctx.beginPath();
-            ctx.moveTo(20, y);
-            ctx.lineTo(340, y);
-            ctx.stroke();
-        }
-
-        // Vertical Lane Lines (A, B, C)
-        ctx.setLineDash([8, 8]);
-        ctx.beginPath();
-        ctx.moveTo(125, 100); ctx.lineTo(125, 440);
-        ctx.moveTo(235, 100); ctx.lineTo(235, 440);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Draw Player & Defender
-        drawCharacter(defenderPos.x, defenderPos.y, '#f44336', 'defender');
-        drawCharacter(playerPos.x, playerPos.y, costumes[state.activeCostume].color, 'player');
-
-        // Draw Timer
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 18px sans-serif';
-        ctx.fillText(`Masa: ${timer}s`, 15, 30);
-        ctx.fillText(`Kotak: ${Math.min(currentBox, 3)}/3`, 270, 30);
-    }
-
-    function drawCharacter(x, y, color, type) {
-        // Shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.2)';
-        ctx.beginPath();
-        ctx.ellipse(x, y + 15, 16, 6, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Body
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(x, y, 18, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Eyes
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(x - 5, y - 3, 4, 0, Math.PI * 2);
-        ctx.arc(x + 5, y - 3, 4, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(x - 5, y - 3, 2, 0, Math.PI * 2);
-        ctx.arc(x + 5, y - 3, 2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Accessories / Costumes
-        if (type === 'player') {
-            const costume = costumes[state.activeCostume];
-            if (costume.hat === 'bandana') {
-                ctx.fillStyle = '#d32f2f';
-                ctx.fillRect(x - 18, y - 12, 36, 6);
-            } else if (costume.hat === 'tanjak') {
-                ctx.fillStyle = '#ffd700';
-                ctx.beginPath();
-                ctx.moveTo(x - 12, y - 14);
-                ctx.lineTo(x, y - 28);
-                ctx.lineTo(x + 12, y - 14);
-                ctx.fill();
-            } else if (costume.hat === 'cyber') {
-                ctx.fillStyle = '#00e5ff';
-                ctx.fillRect(x - 12, y - 5, 24, 6);
-            }
-        } else {
-            // Defender Tag Label
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 10px sans-serif';
-            ctx.fillText('PENJAGA', x - 22, y - 24);
-        }
-    }
-
-    function drawSlapEffect() {
-        ctx.fillStyle = 'rgba(255,0,0,0.4)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#ffff00';
-        ctx.font = '900 40px sans-serif';
-        ctx.fillText('SLAP! 💥', 100, 240);
-    }
-
-    // SHOP LOGIC
-    function openShop() {
-        document.getElementById('menu-screen').style.display = 'none';
-        document.getElementById('shop-screen').style.display = 'flex';
-        
-        const container = document.getElementById('shop-items');
-        container.innerHTML = '';
-
-        for (let key in costumes) {
-            const item = costumes[key];
-            const isUnlocked = state.unlockedCostumes.includes(key);
-            const isEquipped = state.activeCostume === key;
-
-            const div = document.createElement('div');
-            div.style.margin = "10px";
-            div.style.padding = "10px";
-            div.style.background = "#333";
-            div.style.borderRadius = "8px";
-
-            let btnText = isEquipped ? "SEDANG GUNA" : (isUnlocked ? "GUNA" : `BELI (${item.price}💰)`);
-            div.innerHTML = `<strong>${item.name}</strong> (Lvl ${item.reqLvl})<br>`;
-            
-            const button = document.createElement('button');
-            button.className = "btn";
-            button.innerText = btnText;
-            button.onclick = () => buyOrEquipCostume(key);
-            
-            div.appendChild(button);
-            container.appendChild(div);
-        }
-    }
-
-    function buyOrEquipCostume(key) {
-        const item = costumes[key];
-        if (state.unlockedCostumes.includes(key)) {
-            state.activeCostume = key;
-        } else {
-            if (state.level < item.reqLvl) {
-                alert(`Capai Level ${item.reqLvl} dulu!`);
-                return;
-            }
-            if (state.gold >= item.price) {
-                state.gold -= item.price;
-                state.unlockedCostumes.push(key);
-                state.activeCostume = key;
-            } else {
-                alert("Syiling tak cukup!");
-                return;
-            }
-        }
-        saveData();
-        openShop();
-    }
-
-    function closeShop() {
-        document.getElementById('shop-screen').style.display = 'none';
-        document.getElementById('menu-screen').style.display = 'flex';
-    }
-
-    // Init Data
-    saveData();
-    draw();
-</script>
-</body>
-</html>
+                if(attackerChoice === defenderChoice) {
+                    // KANTOI
+                    showMsg("KANTOIII!! 💥", "#ff5252");
+                    drawSlap();
+                    setTimeout(() => endGame(false), 1200);
+                } else {
+                    // LEPAS
+                    showMsg("LEPAS! 💨", "#69f0ae");
+                    currentBox++;
+                    if(currentBox > 3) {
+                        setTimeout(() => endGame(true), 800);
+                    } else {
+                        setTimeout(() => {
+                            if(isHost) sendData('NEXT_ROUND', { box: currentBox });
+                            startRound();
+                        }, 1000);
+                    }
