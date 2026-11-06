@@ -2,300 +2,149 @@
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>3D Galah Panjang Game</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; touch-action: none; }
-        body { overflow: hidden; background-color: #030308; font-family: sans-serif; }
-        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
-        
-        .glass-panel {
-            background: rgba(12, 12, 24, 0.85);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-        }
-        
-        .dpad-btn {
-            background: rgba(236, 72, 153, 0.4);
-            border: 1px solid rgba(236, 72, 153, 0.8);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.4rem;
-        }
-        .dpad-btn:active { background: rgba(236, 72, 153, 0.9); }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galah Panjang Digital</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="relative min-h-screen text-white overflow-hidden">
-
-    <!-- 3D Canvas -->
-    <div id="canvas-container"></div>
-
-    <!-- HUD PENGALAMAN -->
-    <div class="absolute top-4 left-4 z-20 glass-panel p-3 rounded-2xl flex items-center space-x-3 border-l-4 border-pink-500 max-w-xs w-full">
-        <div class="w-10 h-10 rounded-xl bg-pink-500/20 border border-pink-400 flex items-center justify-center font-bold text-pink-300">
-            <i class="fa-solid fa-trophy"></i>
-        </div>
-        <div>
-            <div class="text-xs font-bold text-pink-300 font-mono">GALAH PANJANG 3D</div>
-            <div class="text-[11px] text-emerald-400 mt-0.5">SKOR: <span id="score-text">0</span> | <span id="status-text" class="text-gray-300">LEPASI GARISAN</span></div>
+<body>
+    <div id="main-menu" class="screen active">
+        <div class="menu-container">
+            <h1 class="game-title">🎮 GALAH PANJANG</h1>
+            <p class="game-subtitle">Permainan Tradisional Digital</p>
+            <div class="menu-buttons">
+                <button class="btn btn-primary" onclick="showScreen('select-mode')">▶ MULA MAIN</button>
+                <button class="btn btn-secondary" onclick="showScreen('how-to-play')">📖 CARA MAIN</button>
+            </div>
         </div>
     </div>
 
-    <!-- ROSTER 10 WATAK -->
-    <div class="absolute top-20 right-4 z-20 glass-panel p-2 rounded-xl border border-pink-500/30 max-h-[55vh] flex flex-col pointer-events-auto w-36">
-        <div class="text-[11px] font-bold text-pink-300 mb-1 pb-1 border-b border-white/10 text-center">10 WATAK 3D</div>
-        <div id="roster-container" class="space-y-1 overflow-y-auto pr-1"></div>
+    <div id="how-to-play" class="screen">
+        <div class="content-box">
+            <h2>📖 Cara Main</h2>
+            <div class="rules">
+                <p><strong>🎯 Objektif:</strong> Pemasuk mesti berjaya pergi dan patah balik ke garisan mula tanpa kena tangkap!</p>
+                <ul>
+                    <li>🛡️ <strong>Penjaga:</strong> Pilih 1 kotak untuk jaga — rahsia!</li>
+                    <li>🏃 <strong>Pemasuk:</strong> Pilih 1 kotak untuk lalu — rahsia!</li>
+                    <li>⚡ Tekan Mula — sistem semak secara automatik</li>
+                    <li>✅ Laluan berbeza = Berjaya lepas!</li>
+                    <li>❌ Laluan sama = Tertangkap! Individu keluar, kumpulan terus main</li>
+                    <li>🏆 Berjaya pergi & balik = VICTORY!</li>
+                </ul>
+            </div>
+            <button class="btn btn-back" onclick="showScreen('main-menu')">⬅ KEMBALI</button>
+        </div>
     </div>
 
-    <!-- KAWALAN D-PAD SKRIN -->
-    <div class="absolute bottom-6 left-6 z-20 grid grid-cols-3 gap-2 w-36 h-36 pointer-events-auto">
-        <div></div>
-        <button id="btn-up" class="dpad-btn"><i class="fa-solid fa-arrow-up"></i></button>
-        <div></div>
-        <button id="btn-left" class="dpad-btn"><i class="fa-solid fa-arrow-left"></i></button>
-        <div class="flex items-center justify-center text-[9px] font-bold text-pink-400">PAD</div>
-        <button id="btn-right" class="dpad-btn"><i class="fa-solid fa-arrow-right"></i></button>
-        <div></div>
-        <button id="btn-down" class="dpad-btn"><i class="fa-solid fa-arrow-down"></i></button>
-        <div></div>
+    <div id="select-mode" class="screen">
+        <div class="content-box">
+            <h2>Pilih Mod Permainan</h2>
+            <div class="option-grid">
+                <button class="option-card" onclick="selectMode('computer')">
+                    <div class="option-icon">🤖</div>
+                    <h3>Lawan Komputer</h3>
+                    <p>Bermain secara automatik</p>
+                </button>
+                <button class="option-card" onclick="selectMode('online')">
+                    <div class="option-icon">🌐</div>
+                    <h3>Lawan Dalam Talian</h3>
+                    <p>Bermain dengan orang lain</p>
+                </button>
+            </div>
+            <button class="btn btn-back" onclick="showScreen('main-menu')">⬅ KEMBALI</button>
+        </div>
     </div>
 
-    <!-- BUTANG RESET -->
-    <div class="absolute bottom-6 right-6 z-20 pointer-events-auto">
-        <button id="btn-reset" class="glass-panel px-4 py-3 rounded-xl border border-pink-500/40 text-pink-300 font-bold text-xs active:scale-95">MULA SEMULA</button>
+    <div id="select-field" class="screen">
+        <div class="content-box">
+            <h2>Pilih Saiz Padang</h2>
+            <div class="option-grid">
+                <button class="option-card" onclick="selectField(4)">
+                    <div class="field-preview">
+                        <span>1 2</span><br>
+                        <span>3 4</span>
+                    </div>
+                    <h3>Padang 4</h3>
+                </button>
+                <button class="option-card" onclick="selectField(6)">
+                    <div class="field-preview">
+                        <span>1 2</span><br>
+                        <span>3 4</span><br>
+                        <span>5 6</span>
+                    </div>
+                    <h3>Padang 6</h3>
+                </button>
+                <button class="option-card" onclick="selectField(8)">
+                    <div class="field-preview">
+                        <span>1 2</span><br>
+                        <span>3 4</span><br>
+                        <span>5 6</span><br>
+                        <span>7 8</span>
+                    </div>
+                    <h3>Padang 8</h3>
+                </button>
+            </div>
+            <button class="btn btn-back" onclick="showScreen('select-mode')">⬅ KEMBALI</button>
+        </div>
     </div>
 
-    <script>
-        const characterList = [
-            { id: 0, name: "Valkyrie", color: 0xec4899 },
-            { id: 1, name: "Kitsune", color: 0xf97316 },
-            { id: 2, name: "Knight", color: 0x06b6d4 },
-            { id: 3, name: "Cyborg", color: 0x64748b },
-            { id: 4, name: "Ninja", color: 0x10b981 },
-            { id: 5, name: "Mage", color: 0x8b5cf6 },
-            { id: 6, name: "Emperor", color: 0xeab308 },
-            { id: 7, name: "Neko", color: 0xf43f5e },
-            { id: 8, name: "Android", color: 0x3b82f6 },
-            { id: 9, name: "Titan", color: 0xef4444 }
-        ];
+    <div id="select-players" class="screen">
+        <div class="content-box">
+            <h2>Pilih Jumlah Peserta</h2>
+            <div class="option-grid">
+                <button class="option-card" onclick="selectPlayers(4)">
+                    <div class="option-icon">👥</div>
+                    <h3>4 Orang</h3>
+                </button>
+                <button class="option-card" onclick="selectPlayers(6)">
+                    <div class="option-icon">👥👥</div>
+                    <h3>6 Orang</h3>
+                </button>
+                <button class="option-card" onclick="selectPlayers(8)">
+                    <div class="option-icon">👥👥👥</div>
+                    <h3>8 Orang</h3>
+                </button>
+            </div>
+            <button class="btn btn-back" onclick="showScreen('select-field')">⬅ KEMBALI</button>
+        </div>
+    </div>
 
-        let scene, camera, renderer;
-        let playerGroup, defenders = [];
-        let moveState = { up: false, down: false, left: false, right: false };
-        let currentSelection = 0;
-        let score = 0;
-        let isGameOver = false;
+    <div id="game-screen" class="screen">
+        <div class="game-layout">
+            <div class="mini-map">
+                <h4>PETA</h4>
+                <div id="mini-map-grid" class="mini-map-grid"></div>
+            </div>
 
-        const defenderLines = [-4, 0, 4];
+            <div class="main-game-area">
+                <div class="level-info">
+                    <span id="level-name">Level 1: Kampung Halaman</span>
+                    <span id="rank-display">Pangkat: Pemula</span>
+                </div>
 
-        function init() {
-            const container = document.getElementById('canvas-container');
+                <div id="field-container" class="field-container"></div>
 
-            // 1. Scene & Camera Setup
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0a0412);
+                <div class="game-status">
+                    <p id="turn-indicator">Giliran: Penjaga — Pilih kotak untuk jaga</p>
+                    <p id="result-text" class="result-text"></p>
+                </div>
 
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 9, 13);
-            camera.lookAt(0, 0, 0);
+                <div class="control-panel">
+                    <div id="guard-choices" class="choice-panel">
+                        <h3>🛡️ PENJAGA: Pilih Kotak Jaga</h3>
+                        <div id="guard-buttons" class="button-grid"></div>
+                    </div>
+                    <div id="runner-choices" class="choice-panel" style="display:none;">
+                        <h3>🏃 PEMASUK: Pilih Laluan Lalu</h3>
+                        <div id="runner-buttons" class="button-grid"></div>
+                    </div>
+                    <button id="start-btn" class="btn btn-primary btn-large" onclick="startRound()" style="display:none;">⚡ MULA!</button>
+                    <button class="btn btn-secondary" onclick="backToMenu()">🏠 KELUAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            // 2. Renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            container.appendChild(renderer.domElement);
-
-            // 3. Lights
-            const ambient = new THREE.AmbientLight(0xffffff, 0.9);
-            scene.add(ambient);
-
-            const light = new THREE.DirectionalLight(0xffffff, 1.2);
-            light.position.set(5, 10, 5);
-            scene.add(light);
-
-            // 4. Gelanggang Galah Panjang
-            setupCourt();
-
-            // 5. Build Roster & Spawn Character
-            buildRosterUI();
-            spawnPlayer(0);
-            spawnDefenders();
-            setupControls();
-
-            window.addEventListener('resize', onResize);
-            animate();
-        }
-
-        function setupCourt() {
-            // Tapak Gelanggang
-            const court = new THREE.Mesh(
-                new THREE.PlaneGeometry(10, 18),
-                new THREE.MeshLambertMaterial({ color: 0x111122 })
-            );
-            court.rotation.x = -Math.PI / 2;
-            scene.add(court);
-
-            const grid = new THREE.GridHelper(10, 2, 0xec4899, 0x333355);
-            grid.position.y = 0.01;
-            scene.add(grid);
-
-            // Garisan Penjaga
-            defenderLines.forEach(z => {
-                const line = new THREE.Mesh(
-                    new THREE.BoxGeometry(10, 0.05, 0.2),
-                    new THREE.MeshBasicMaterial({ color: 0xec4899 })
-                );
-                line.position.set(0, 0.02, z);
-                scene.add(line);
-            });
-
-            // Garisan Penamat
-            const finishLine = new THREE.Mesh(
-                new THREE.BoxGeometry(10, 0.05, 0.3),
-                new THREE.MeshBasicMaterial({ color: 0x10b981 })
-            );
-            finishLine.position.set(0, 0.02, -7.5);
-            scene.add(finishLine);
-        }
-
-        function spawnPlayer(index) {
-            if (playerGroup) scene.remove(playerGroup);
-
-            const char = characterList[index];
-            playerGroup = new THREE.Group();
-
-            const mat = new THREE.MeshLambertMaterial({ color: char.color });
-            const skinMat = new THREE.MeshLambertMaterial({ color: 0xffdfd3 });
-
-            // Body & Head
-            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.2, 0.9, 8), mat);
-            body.position.y = 0.45;
-            playerGroup.add(body);
-
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), skinMat);
-            head.position.y = 1.05;
-            playerGroup.add(head);
-
-            playerGroup.position.set(0, 0, 7.5);
-            scene.add(playerGroup);
-        }
-
-        function spawnDefenders() {
-            defenders.forEach(d => scene.remove(d));
-            defenders = [];
-
-            defenderLines.forEach((z, index) => {
-                const def = new THREE.Group();
-                const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 1.1, 8), new THREE.MeshLambertMaterial({ color: 0xef4444 }));
-                body.position.y = 0.55;
-                def.add(body);
-
-                const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshLambertMaterial({ color: 0xffdfd3 }));
-                head.position.y = 1.25;
-                def.add(head);
-
-                def.position.set(0, 0, z);
-                def.userData = { dir: index % 2 === 0 ? 1 : -1, speed: 0.05 + index * 0.015 };
-                scene.add(def);
-                defenders.push(def);
-            });
-        }
-
-        function buildRosterUI() {
-            const container = document.getElementById('roster-container');
-            container.innerHTML = '';
-            characterList.forEach((char, index) => {
-                const btn = document.createElement('button');
-                btn.className = `w-full text-left p-1 rounded text-[10px] flex items-center space-x-1 border ${
-                    index === 0 ? 'bg-pink-500/40 border-pink-400 text-white font-bold' : 'bg-black/40 border-white/10 text-gray-300'
-                }`;
-                btn.id = `btn-char-${index}`;
-                btn.onclick = () => {
-                    document.getElementById(`btn-char-${currentSelection}`).className = "w-full text-left p-1 rounded text-[10px] flex items-center space-x-1 border bg-black/40 border-white/10 text-gray-300";
-                    btn.className = "w-full text-left p-1 rounded text-[10px] flex items-center space-x-1 border bg-pink-500/40 border-pink-400 text-white font-bold";
-                    currentSelection = index;
-                    spawnPlayer(index);
-                };
-                btn.innerHTML = `<div class="w-2.5 h-2.5 rounded-full" style="background:#${char.color.toString(16)}"></div><span class="truncate">${char.name}</span>`;
-                container.appendChild(btn);
-            });
-        }
-
-        function resetGame() {
-            if (playerGroup) playerGroup.position.set(0, 0, 7.5);
-            isGameOver = false;
-            document.getElementById('status-text').innerText = "LEPASI GARISAN";
-            document.getElementById('status-text').className = "text-gray-300";
-        }
-
-        function setupControls() {
-            const bind = (id, k) => {
-                const b = document.getElementById(id);
-                b.addEventListener('touchstart', (e) => { e.preventDefault(); moveState[k] = true; });
-                b.addEventListener('touchend', (e) => { e.preventDefault(); moveState[k] = false; });
-                b.addEventListener('mousedown', () => moveState[k] = true);
-                b.addEventListener('mouseup', () => moveState[k] = false);
-            };
-            bind('btn-up','up'); bind('btn-down','down'); bind('btn-left','left'); bind('btn-right','right');
-
-            document.getElementById('btn-reset').onclick = resetGame;
-        }
-
-        function onResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            if (!isGameOver && playerGroup) {
-                const speed = 0.08;
-                if (moveState.up && playerGroup.position.z > -8) playerGroup.position.z -= speed;
-                if (moveState.down && playerGroup.position.z < 8) playerGroup.position.z += speed;
-                if (moveState.left && playerGroup.position.x > -4.5) playerGroup.position.x -= speed;
-                if (moveState.right && playerGroup.position.x < 4.5) playerGroup.position.x += speed;
-
-                // Pergerakan Musuh
-                defenders.forEach(def => {
-                    def.position.x += def.userData.speed * def.userData.dir;
-                    if (def.position.x > 4 || def.position.x < -4) def.userData.dir *= -1;
-
-                    // Pelanggaran
-                    if (playerGroup.position.distanceTo(def.position) < 0.65) {
-                        isGameOver = true;
-                        document.getElementById('status-text').innerText = "TERTANGKAP!";
-                        document.getElementById('status-text').className = "text-rose-500 font-bold animate-pulse";
-                    }
-                });
-
-                // Menang
-                if (playerGroup.position.z <= -7.5) {
-                    score += 100;
-                    document.getElementById('score-text').innerText = score;
-                    document.getElementById('status-text').innerText = "+100 SKOR!";
-                    playerGroup.position.set(0, 0, 7.5);
-                }
-
-                // Kamera Ikut
-                camera.position.x = playerGroup.position.x * 0.2;
-                camera.position.z = playerGroup.position.z + 7.5;
-                camera.lookAt(playerGroup.position.x * 0.2, 0.5, playerGroup.position.z - 1.5);
-            }
-
-            renderer.render(scene, camera);
-        }
-
-        window.onload = init;
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
