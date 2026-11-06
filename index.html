@@ -3,148 +3,382 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galah Panjang Digital</title>
-    <link rel="stylesheet" href="style.css">
+    <title>BelonAcah 3D</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { overflow: hidden; background: #87CEEB; }
+        canvas { display: block; }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(0,0,0,0.75);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            max-width: 300px;
+        }
+        
+        #ui h2 { font-size: 18px; margin-bottom: 10px; color: #ffd700; }
+        button {
+            padding: 8px 14px;
+            margin: 4px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-yellow { background: #ffd700; color: #000; }
+        .btn-green { background: #2ecc71; color: #fff; }
+        .btn-red { background: #e74c3c; color: #fff; }
+        #info-box { margin-top: 10px; font-size: 13px; line-height: 1.5; }
+        #mini-map {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.75);
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+        }
+        .map-cell {
+            width: 22px;
+            height: 22px;
+            border: 1px solid #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2px;
+        }
+    </style>
 </head>
 <body>
-    <div id="main-menu" class="screen active">
-        <div class="menu-container">
-            <h1 class="game-title">🎮 GALAH PANJANG</h1>
-            <p class="game-subtitle">Permainan Tradisional Digital</p>
-            <div class="menu-buttons">
-                <button class="btn btn-primary" onclick="showScreen('select-mode')">▶ MULA MAIN</button>
-                <button class="btn btn-secondary" onclick="showScreen('how-to-play')">📖 CARA MAIN</button>
-            </div>
+    <div id="ui">
+        <h2>🎮 BelonAcah</h2>
+        <div>
+            <button class="btn-yellow" onclick="startGame(4)">Padang 4</button>
+            <button class="btn-yellow" onclick="startGame(6)">Padang 6</button>
+            <button class="btn-yellow" onclick="startGame(8)">Padang 8</button>
+        </div>
+        <div id="info-box">
+            <div><strong>Tahap:</strong> <span id="level-name">Kampung Halaman</span></div>
+            <div><strong>Pangkat:</strong> <span id="rank">Pemula</span></div>
+            <div><strong>Kemenangan:</strong> <span id="wins">0</span></div>
+            <div id="status" style="margin-top:8px;color:#ffd700">Pilih saiz padang untuk mula</div>
         </div>
     </div>
-
-    <div id="how-to-play" class="screen">
-        <div class="content-box">
-            <h2>📖 Cara Main</h2>
-            <div class="rules">
-                <p><strong>🎯 Objektif:</strong> Pemasuk mesti berjaya pergi dan patah balik ke garisan mula tanpa kena tangkap!</p>
-                <ul>
-                    <li>🛡️ <strong>Penjaga:</strong> Pilih 1 kotak untuk jaga — rahsia!</li>
-                    <li>🏃 <strong>Pemasuk:</strong> Pilih 1 kotak untuk lalu — rahsia!</li>
-                    <li>⚡ Tekan Mula — sistem semak secara automatik</li>
-                    <li>✅ Laluan berbeza = Berjaya lepas!</li>
-                    <li>❌ Laluan sama = Tertangkap! Individu keluar, kumpulan terus main</li>
-                    <li>🏆 Berjaya pergi & balik = VICTORY!</li>
-                </ul>
-            </div>
-            <button class="btn btn-back" onclick="showScreen('main-menu')">⬅ KEMBALI</button>
-        </div>
+    
+    <div id="mini-map">
+        <div style="text-align:center;font-size:11px;margin-bottom:5px">PETA</div>
+        <div id="map-grid" class="map-grid"></div>
     </div>
 
-    <div id="select-mode" class="screen">
-        <div class="content-box">
-            <h2>Pilih Mod Permainan</h2>
-            <div class="option-grid">
-                <button class="option-card" onclick="selectMode('computer')">
-                    <div class="option-icon">🤖</div>
-                    <h3>Lawan Komputer</h3>
-                    <p>Bermain secara automatik</p>
-                </button>
-                <button class="option-card" onclick="selectMode('online')">
-                    <div class="option-icon">🌐</div>
-                    <h3>Lawan Dalam Talian</h3>
-                    <p>Bermain dengan orang lain</p>
-                </button>
-            </div>
-            <button class="btn btn-back" onclick="showScreen('main-menu')">⬅ KEMBALI</button>
-        </div>
-    </div>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        }
+    }
+    </script>
+    
+    <script type="module">
+        import * as THREE from 'three';
 
-    <div id="select-field" class="screen">
-        <div class="content-box">
-            <h2>Pilih Saiz Padang</h2>
-            <div class="option-grid">
-                <button class="option-card" onclick="selectField(4)">
-                    <div class="field-preview">
-                        <span>1 2</span><br>
-                        <span>3 4</span>
-                    </div>
-                    <h3>Padang 4</h3>
-                </button>
-                <button class="option-card" onclick="selectField(6)">
-                    <div class="field-preview">
-                        <span>1 2</span><br>
-                        <span>3 4</span><br>
-                        <span>5 6</span>
-                    </div>
-                    <h3>Padang 6</h3>
-                </button>
-                <button class="option-card" onclick="selectField(8)">
-                    <div class="field-preview">
-                        <span>1 2</span><br>
-                        <span>3 4</span><br>
-                        <span>5 6</span><br>
-                        <span>7 8</span>
-                    </div>
-                    <h3>Padang 8</h3>
-                </button>
-            </div>
-            <button class="btn btn-back" onclick="showScreen('select-mode')">⬅ KEMBALI</button>
-        </div>
-    </div>
+        let scene, camera, renderer;
+        let boxes = [];
+        let characters = {};
+        let guardChoice = 0;
+        let runnerChoice = 0;
+        let phase = 0;
+        let currentLevel = 1;
+        let totalWins = 0;
+        let currentFieldSize = 6;
+        
+        const levelData = [
+            { name: "Kampung Halaman", sky: 0x87CEEB, ground: 0x71b55f },
+            { name: "Padang Desa", sky: 0x94d2e9, ground: 0x90a959 },
+            { name: "Pekan Kecil", sky: 0x87ceeb, ground: 0xd4a574 },
+            { name: "Bandaraya", sky: 0x87ceeb, ground: 0x829ca8 },
+            { name: "Taman Negara", sky: 0x5a9bd4, ground: 0x2d6a4f },
+            { name: "Pulau Tropika", sky: 0x87ceeb, ground: 0x4ecdc4 },
+            { name: "Puncak Gunung", sky: 0xb0d4f1, ground: 0xb8c5d6 },
+            { name: "Bulan", sky: 0x1a1a2e, ground: 0xc9c9c9 },
+            { name: "Planet Merah", sky: 0x4a1a1a, ground: 0xc14444 },
+            { name: "Stesen Angkasa", sky: 0x0f0c29, ground: 0x2a2a4a }
+        ];
+        
+        const rankData = [
+            "Pemula", "Pemain Baru", "Pemain Aktif", "Penyertai", "Pertengahan",
+            "Mahir", "Berpengalaman", "Pakar", "Juara", "Juara Agung"
+        ];
 
-    <div id="select-players" class="screen">
-        <div class="content-box">
-            <h2>Pilih Jumlah Peserta</h2>
-            <div class="option-grid">
-                <button class="option-card" onclick="selectPlayers(4)">
-                    <div class="option-icon">👥</div>
-                    <h3>4 Orang</h3>
-                </button>
-                <button class="option-card" onclick="selectPlayers(6)">
-                    <div class="option-icon">👥👥</div>
-                    <h3>6 Orang</h3>
-                </button>
-                <button class="option-card" onclick="selectPlayers(8)">
-                    <div class="option-icon">👥👥👥</div>
-                    <h3>8 Orang</h3>
-                </button>
-            </div>
-            <button class="btn btn-back" onclick="showScreen('select-field')">⬅ KEMBALI</button>
-        </div>
-    </div>
+        init();
 
-    <div id="game-screen" class="screen">
-        <div class="game-layout">
-            <div class="mini-map">
-                <h4>PETA</h4>
-                <div id="mini-map-grid" class="mini-map-grid"></div>
-            </div>
+        function init() {
+            scene = new THREE.Scene();
+            updateLevelBackground();
 
-            <div class="main-game-area">
-                <div class="level-info">
-                    <span id="level-name">Level 1: Kampung Halaman</span>
-                    <span id="rank-display">Pangkat: Pemula</span>
-                </div>
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 10, 14);
+            camera.lookAt(0, 0, 0);
 
-                <div id="field-container" class="field-container"></div>
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
 
-                <div class="game-status">
-                    <p id="turn-indicator">Giliran: Penjaga — Pilih kotak untuk jaga</p>
-                    <p id="result-text" class="result-text"></p>
-                </div>
+            const light = new THREE.DirectionalLight(0xffffff, 1.3);
+            light.position.set(8, 15, 8);
+            light.castShadow = true;
+            light.shadow.mapSize.width = 2048;
+            light.shadow.mapSize.height = 2048;
+            scene.add(light);
 
-                <div class="control-panel">
-                    <div id="guard-choices" class="choice-panel">
-                        <h3>🛡️ PENJAGA: Pilih Kotak Jaga</h3>
-                        <div id="guard-buttons" class="button-grid"></div>
-                    </div>
-                    <div id="runner-choices" class="choice-panel" style="display:none;">
-                        <h3>🏃 PEMASUK: Pilih Laluan Lalu</h3>
-                        <div id="runner-buttons" class="button-grid"></div>
-                    </div>
-                    <button id="start-btn" class="btn btn-primary btn-large" onclick="startRound()" style="display:none;">⚡ MULA!</button>
-                    <button class="btn btn-secondary" onclick="backToMenu()">🏠 KELUAR</button>
-                </div>
-            </div>
-        </div>
-    </div>
+            const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambient);
 
-    <script src="script.js"></script>
-</body>
-</html>
+            createGround();
+            createCharacter('guard', 0xff4444, -4);
+            createCharacter('runner', 0x4488ff, 4);
+
+            window.addEventListener('resize', onResize);
+            renderer.domElement.addEventListener('click', onClick);
+            
+            animate();
+        }
+
+        function updateLevelBackground() {
+            const data = levelData[currentLevel - 1];
+            scene.background = new THREE.Color(data.sky);
+            document.getElementById('level-name').textContent = data.name;
+            document.getElementById('rank').textContent = rankData[currentLevel - 1];
+        }
+
+        function createGround() {
+            const groundGeo = new THREE.PlaneGeometry(40, 30);
+            const groundMat = new THREE.MeshStandardMaterial({ color: levelData[0].ground });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            ground.name = 'ground';
+            scene.add(ground);
+
+            const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+            const startLineGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-3, 0.02, 6),
+                new THREE.Vector3(3, 0.02, 6)
+            ]);
+            const startLine = new THREE.Line(startLineGeo, lineMat);
+            scene.add(startLine);
+
+            const endLineGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-3, 0.02, -6),
+                new THREE.Vector3(3, 0.02, -6)
+            ]);
+            const endLine = new THREE.Line(endLineGeo, lineMat);
+            scene.add(endLine);
+        }
+
+        function createCharacter(name, color, xPos) {
+            const char = new THREE.Group();
+            
+            const body = new THREE.Mesh(
+                new THREE.CapsuleGeometry(0.25, 0.5, 4, 8),
+                new THREE.MeshStandardMaterial({ color: color })
+            );
+            body.position.y = 0.7;
+            body.castShadow = true;
+            char.add(body);
+
+            const head = new THREE.Mesh(
+                new THREE.SphereGeometry(0.22, 16, 16),
+                new THREE.MeshStandardMaterial({ color: 0xffdbac })
+            );
+            head.position.y = 1.3;
+            char.add(head);
+
+            if (name === 'guard') {
+                const hat = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.15, 0.18, 0.1, 16),
+                    new THREE.MeshStandardMaterial({ color: 0x222222 })
+                );
+                hat.position.y = 1.55;
+                char.add(hat);
+            } else {
+                const hair = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.23, 16, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x4a3728 })
+                );
+                hair.position.y = 1.4;
+                hair.scale.y = 0.7;
+                char.add(hair);
+            }
+
+            char.position.set(xPos, 0, 0);
+            char.name = name;
+            characters[name] = char;
+            scene.add(char);
+        }
+
+        function createBoxes(size) {
+            clearBoxes();
+            currentFieldSize = size;
+            
+            const rows = Math.ceil(size / 2);
+            const mapGrid = document.getElementById('map-grid');
+            mapGrid.innerHTML = '';
+            
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < 2; j++) {
+                    const id = i * 2 + j + 1;
+                    if (id > size) break;
+                    
+                    const boxGeo = new THREE.BoxGeometry(1.5, 0.25, 1);
+                    const boxMat = new THREE.MeshStandardMaterial({ 
+                        color: 0x3498db, 
+                        emissive: 0x003366,
+                        emissiveIntensity: 0.1
+                    });
+                    const box = new THREE.Mesh(boxGeo, boxMat);
+                    box.position.set(j * 1.8 - 0.9, 0.13, 4 - i * 1.5);
+                    box.userData.id = id;
+                    box.castShadow = true;
+                    box.receiveShadow = true;
+                    scene.add(box);
+                    boxes.push(box);
+
+                    const edgeGeo = new THREE.EdgesGeometry(boxGeo);
+                    const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff });
+                    const edge = new THREE.LineSegments(edgeGeo, edgeMat);
+                    box.add(edge);
+
+                    const mapCell = document.createElement('div');
+                    mapCell.className = 'map-cell';
+                    mapCell.textContent = id;
+                    mapCell.id = 'map-' + id;
+                    mapGrid.appendChild(mapCell);
+                }
+            }
+        }
+
+        function clearBoxes() {
+            boxes.forEach(b => scene.remove(b));
+            boxes = [];
+            guardChoice = 0;
+            runnerChoice = 0;
+            phase = 0;
+        }
+
+        window.startGame = function(size) {
+            currentFieldSize = size;
+            createBoxes(size);
+            updateStatus("🛡️ PENJAGA: Klik kotak untuk jaga");
+            
+            const ground = scene.getObjectByName('ground');
+            if (ground) {
+                ground.material.color.set(levelData[currentLevel - 1].ground);
+            }
+        };
+
+        function onClick(event) {
+            if (boxes.length === 0) return;
+
+            const mouse = new THREE.Vector2();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const hits = raycaster.intersectObjects(boxes);
+            
+            if (hits.length > 0) {
+                const box = hits[0].object;
+                const id = box.userData.id;
+                
+                if (phase === 0) {
+                    if (guardChoice > 0) resetBoxColor(guardChoice);
+                    guardChoice = id;
+                    box.material.emissive.set(0x660000);
+                    box.material.emissiveIntensity = 0.5;
+                    document.getElementById('map-' + id).style.background = '#e74c3c';
+                    phase = 1;
+                    updateStatus("🏃 PEMASUK: Klik kotak untuk lalu");
+                    
+                    moveCharacterTo(characters.guard, box.position.x, box.position.z - 0.8);
+                    
+                } else if (phase === 1) {
+                    if (runnerChoice > 0) resetBoxColor2(runnerChoice);
+                    runnerChoice = id;
+                    box.material.emissive.set(0x006600);
+                    box.material.emissiveIntensity = 0.5;
+                    document.getElementById('map-' + id).style.background = '#2ecc71';
+                    phase = 2;
+                    
+                    moveCharacterTo(characters.runner, box.position.x, box.position.z + 0.8);
+                    
+                    setTimeout(checkResult, 800);
+                }
+            }
+        }
+
+        function resetBoxColor(id) {
+            const box = boxes.find(b => b.userData.id === id);
+            if (box) {
+                box.material.emissive.set(0x003366);
+                box.material.emissiveIntensity = 0.1;
+            }
+            const mapCell = document.getElementById('map-' + id);
+            if (mapCell) mapCell.style.background = '';
+        }
+
+        function resetBoxColor2(id) {
+            const box = boxes.find(b => b.userData.id === id);
+            if (box) {
+                box.material.emissive.set(0x003366);
+                box.material.emissiveIntensity = 0.1;
+            }
+        }
+
+        function moveCharacterTo(char, targetX, targetZ) {
+            const startX = char.position.x;
+            const startZ = char.position.z;
+            const dist = Math.sqrt((targetX - startX)**2 + (targetZ - startZ)**2);
+            const duration = dist * 500;
+            const start = performance.now();
+            
+            function animateMove(time) {
+                const elapsed = time - start;
+                const t = Math.min(elapsed / duration, 1);
+                char.position.x = startX + (targetX - startX) * t;
+                char.position.z = startZ + (targetZ - startZ) * t;
+                if (t < 1) requestAnimationFrame(animateMove);
+            }
+            requestAnimationFrame(animateMove);
+        }
+
+        function checkResult() {
+            if (guardChoice === runnerChoice) {
+                updateStatus("❌ TERTANGKAP! Pemasuk keluar pusingan ini.");
+            } else {
+                totalWins++;
+                document.getElementById('wins').textContent = totalWins;
+                updateStatus("✅ BERJAYA LEPAS! Pergi & balik = VICTORY!");
+                
+                if (totalWins % 3 === 0 && currentLevel < 10) {
+                    currentLevel++;
+                    setTimeout(() => {
+                        alert(`🎉 NAIK TAHAP!\n${levelData[currentLevel - 1].name}`);
+                        updateLevelBackground();
+                        startGame(currentFieldSize);
+                    }, 1500);
+                    return;
+                }
+            }
